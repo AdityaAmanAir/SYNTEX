@@ -3,213 +3,431 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Academic Revision Workspace — Lecture Synthesis System</title>
+  <title>Syntex &middot; C++17 Lecture Synthesis & Revision Engine</title>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #09090b;
-      --surface: #111113;
-      --surface-raised: #18181b;
-      --surface-hover: #202024;
-      --border: #27272a;
-      --border-subtle: #1f1f23;
-      --text: #fafafa;
-      --text-muted: #a1a1aa;
-      --text-dim: #71717a;
-      --accent: #e11d48; /* Swiss Red */
-      --accent-muted: rgba(225, 29, 72, 0.12);
+      --bg: #060608;
+      --bg-gradient: radial-gradient(circle at 50% -10%, rgba(225, 29, 72, 0.12), transparent 45%),
+                         radial-gradient(circle at 10% 40%, rgba(99, 102, 241, 0.08), transparent 35%),
+                         radial-gradient(circle at 90% 70%, rgba(14, 165, 233, 0.07), transparent 40%);
+      --glass: rgba(18, 18, 24, 0.65);
+      --glass-raised: rgba(26, 26, 36, 0.55);
+      --glass-active: rgba(34, 34, 48, 0.7);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(255, 255, 255, 0.22);
+      --border-accent: rgba(225, 29, 72, 0.4);
+      --text: #f4f4f6;
+      --text-muted: #9494a0;
+      --text-dim: #60606e;
+      --accent: #e11d48;
+      --accent-glow: rgba(225, 29, 72, 0.25);
       --accent-hover: #be123c;
-      --font-sans: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Arial, sans-serif;
-      --font-mono: "SF Mono", "Consolas", "Monaco", monospace;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: var(--font-sans);
-      background: var(--bg);
+      background-color: var(--bg);
+      background-image: var(--bg-gradient);
+      background-attachment: fixed;
       color: var(--text);
-      line-height: 1.5;
-      padding: 48px 24px;
+      line-height: 1.55;
+      padding: 0;
+      margin: 0;
       -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      min-height: 100vh;
     }
 
-    .container {
-      max-width: 960px;
+    /* Ambient Mesh Grid Lines */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 64px 64px;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* Top Navigation Bar - Liquid Frosted Glass */
+    .nav-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(6, 6, 8, 0.72);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 28px;
+    }
+
+    .nav-content {
+      max-width: 1140px;
       margin: 0 auto;
-    }
-
-    /* Top Grid Header */
-    .header-bar {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      align-items: baseline;
-      gap: 16px;
-      padding-bottom: 28px;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 36px;
-    }
-
-    .brand-eyebrow {
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 8px;
-      display: block;
-    }
-
-    h1 {
-      font-size: 2.2rem;
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      line-height: 1.15;
-      color: var(--text);
-    }
-
-    .header-desc {
-      color: var(--text-muted);
-      font-size: 0.95rem;
-      margin-top: 6px;
-      max-width: 620px;
-    }
-
-    .status-indicator {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 12px;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      font-size: 0.75rem;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-    }
-
-    .status-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #eab308;
-    }
-
-    .status-dot.active {
-      background: #10b981;
-    }
-
-    /* Grid Layout */
-    .panel {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      margin-bottom: 32px;
-    }
-
-    .panel-header {
-      padding: 16px 24px;
-      border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
-    .panel-title {
-      font-size: 0.8rem;
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-logo-icon {
+      width: 28px;
+      height: 28px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.04);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-sm);
+    }
+
+    .brand-title {
+      font-size: 0.95rem;
       font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text);
+    }
+
+    .brand-tag {
+      font-size: 0.68rem;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      backdrop-filter: blur(12px);
+    }
+
+    .status-beacon {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #eab308;
+      box-shadow: 0 0 8px rgba(234, 179, 8, 0.5);
+      position: relative;
+    }
+
+    .status-beacon.active {
+      background: #10b981;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
+    }
+
+    /* Container */
+    .app-container {
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 56px 24px 80px;
+    }
+
+    /* Hero Section */
+    .hero-section {
+      text-align: center;
+      margin-bottom: 56px;
+      position: relative;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 999px;
+      background: rgba(225, 29, 72, 0.08);
+      border: 1px solid rgba(225, 29, 72, 0.25);
+      color: #fda4af;
+      font-size: 0.74rem;
+      font-weight: 600;
       letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .hero-title {
+      font-size: 3.4rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      color: #ffffff;
+      margin-bottom: 20px;
+    }
+
+    .text-gradient {
+      background: linear-gradient(135deg, #ffffff 30%, #a1a1aa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: 1.15rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      max-width: 680px;
+      margin: 0 auto 36px;
+      line-height: 1.6;
+    }
+
+    /* Bento Feature Strip */
+    .bento-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+
+    @media (max-width: 860px) {
+      .bento-strip { grid-template-columns: repeat(2, 1fr); }
+      .hero-title { font-size: 2.5rem; }
+    }
+    @media (max-width: 520px) {
+      .bento-strip { grid-template-columns: 1fr; }
+      .hero-title { font-size: 2rem; }
+    }
+
+    .bento-card {
+      background: var(--glass);
+      backdrop-filter: blur(24px) saturate(160%);
+      -webkit-backdrop-filter: blur(24px) saturate(160%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      text-align: left;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
+
+    .bento-card:hover {
+      border-color: var(--border-focus);
+      background-color: var(--glass-raised);
+    }
+
+    .bento-num {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .bento-heading {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.01em;
+      margin-bottom: 6px;
+    }
+
+    .bento-desc {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    /* Core Workspace Liquid Glass Box */
+    .workspace-glass-card {
+      background: var(--glass);
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      margin-bottom: 40px;
+    }
+
+    .card-topbar {
+      padding: 18px 28px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.015);
+    }
+
+    .card-topbar-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
       color: var(--text-muted);
     }
 
-    .panel-body {
-      padding: 24px;
+    .card-topbar-spec {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-dim);
+    }
+
+    .card-body {
+      padding: 32px 28px;
     }
 
     /* Dropzone */
-    .dropzone {
+    .liquid-dropzone {
       border: 1px dashed var(--border);
-      background: var(--surface-raised);
-      padding: 44px 24px;
+      background: var(--glass-raised);
+      border-radius: var(--radius-md);
+      padding: 48px 24px;
       text-align: center;
-      position: relative;
       cursor: pointer;
-      transition: border-color 0.15s ease, background 0.15s ease;
+      position: relative;
+      transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
     }
 
-    .dropzone:hover, .dropzone.dragover {
-      border-color: var(--text);
-      background: var(--surface-hover);
+    .liquid-dropzone:hover, .liquid-dropzone.dragover {
+      border-color: rgba(255, 255, 255, 0.35);
+      background-color: var(--glass-active);
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.03);
     }
 
-    .dropzone input[type="file"] {
+    .liquid-dropzone input[type="file"] {
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
       opacity: 0;
       cursor: pointer;
     }
 
-    .drop-heading {
+    .upload-icon-svg {
+      width: 44px;
+      height: 44px;
+      margin: 0 auto 16px;
+      display: block;
+      color: var(--text-muted);
+      transition: color 0.2s ease;
+    }
+
+    .liquid-dropzone:hover .upload-icon-svg {
+      color: var(--text);
+    }
+
+    .drop-main-text {
       font-size: 1.05rem;
       font-weight: 600;
       color: var(--text);
-      margin-bottom: 4px;
+      letter-spacing: -0.01em;
+      margin-bottom: 6px;
     }
 
-    .drop-sub {
-      font-size: 0.8rem;
+    .drop-sub-text {
+      font-size: 0.82rem;
       color: var(--text-dim);
+      margin-bottom: 14px;
     }
 
-    .file-meta {
-      margin-top: 16px;
-      display: none;
-      padding: 8px 12px;
-      background: var(--surface);
-      border: 1px solid var(--border);
+    .format-pills {
+      display: inline-flex;
+      gap: 6px;
+    }
+
+    .format-tag {
       font-family: var(--font-mono);
-      font-size: 0.8rem;
+      font-size: 0.68rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: var(--text-muted);
+    }
+
+    .file-attachment-badge {
+      display: none;
+      margin-top: 18px;
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
       color: var(--text);
     }
 
-    .sample-action {
+    /* Verification Sample Action */
+    .sample-action-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-top: 12px;
+      margin-top: 16px;
+      padding: 0 4px;
     }
 
-    .btn-text {
+    .btn-link-sample {
       background: none;
       border: none;
       color: var(--text-dim);
-      font-size: 0.78rem;
       font-family: var(--font-sans);
+      font-size: 0.8rem;
+      font-weight: 500;
       cursor: pointer;
       text-decoration: underline;
+      text-underline-offset: 3px;
+      transition: color 0.15s ease;
       padding: 0;
-      transition: color 0.15s;
     }
 
-    .btn-text:hover {
+    .btn-link-sample:hover {
       color: var(--text);
     }
 
-    /* Controls Form Grid */
-    .form-grid {
+    .pipeline-threads-badge {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-dim);
+    }
+
+    /* Form Grid */
+    .controls-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 18px;
-      margin-top: 24px;
+      gap: 20px;
+      margin-top: 28px;
     }
 
-    @media (max-width: 680px) {
-      .header-bar { grid-template-columns: 1fr; }
-      .form-grid { grid-template-columns: 1fr; }
+    @media (max-width: 640px) {
+      .controls-grid { grid-template-columns: 1fr; }
     }
 
-    .control-group label {
+    .control-label {
       display: block;
       font-size: 0.72rem;
       font-weight: 700;
@@ -219,510 +437,767 @@
       margin-bottom: 8px;
     }
 
-    select {
+    .glass-select {
       width: 100%;
-      padding: 11px 14px;
-      background: var(--surface-raised);
+      padding: 13px 16px;
+      background: var(--glass-raised);
       border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
       color: var(--text);
-      font-size: 0.9rem;
       font-family: var(--font-sans);
-      border-radius: 0;
+      font-size: 0.92rem;
       outline: none;
-      transition: border-color 0.15s;
       appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: right 14px center;
+      cursor: pointer;
     }
 
-    select:focus {
-      border-color: var(--text);
+    .glass-select:focus {
+      border-color: var(--border-focus);
+      background-color: var(--glass-active);
     }
 
-    /* Primary Action */
-    .btn-submit {
+    /* Primary Execution Button */
+    .btn-execute {
       width: 100%;
-      margin-top: 24px;
-      padding: 14px 20px;
-      background: var(--text);
-      color: var(--bg);
-      border: 1px solid var(--text);
-      font-size: 0.85rem;
+      margin-top: 28px;
+      padding: 16px 24px;
+      border-radius: var(--radius-sm);
+      background: #ffffff;
+      color: #060608;
+      border: 1px solid #ffffff;
+      font-family: var(--font-sans);
+      font-size: 0.88rem;
       font-weight: 700;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
       cursor: pointer;
-      transition: background 0.15s, color 0.15s;
+      position: relative;
+      overflow: hidden;
+      transition: background-color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
       display: flex;
       justify-content: center;
       align-items: center;
       gap: 10px;
     }
 
-    .btn-submit:hover:not(:disabled) {
-      background: #e4e4e7;
+    .btn-execute:hover:not(:disabled) {
+      background-color: #e4e4e7;
+      border-color: #e4e4e7;
     }
 
-    .btn-submit:disabled {
+    .btn-execute:disabled {
       opacity: 0.4;
       cursor: not-allowed;
     }
 
-    /* Processing Bar */
-    .process-panel {
+    /* Progress & Processing Panel */
+    .processing-card {
       display: none;
-      padding: 32px 24px;
-      text-align: left;
-      border-left: 2px solid var(--accent);
-      background: var(--surface-raised);
+      margin-top: 28px;
+      padding: 24px;
+      border-radius: var(--radius-md);
+      background: rgba(225, 29, 72, 0.04);
+      border: 1px solid rgba(225, 29, 72, 0.2);
     }
 
-    .process-label {
+    .processing-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .processing-tag {
       font-size: 0.72rem;
       font-weight: 700;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--accent);
-      margin-bottom: 6px;
     }
 
-    .process-step {
+    .processing-desc {
       font-size: 1.05rem;
       font-weight: 600;
       color: var(--text);
     }
 
-    .process-progress-bar {
-      height: 2px;
+    .progress-track {
+      height: 3px;
       width: 100%;
-      background: var(--border);
-      margin-top: 16px;
-      position: relative;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 999px;
       overflow: hidden;
+      margin-top: 14px;
+      position: relative;
     }
 
-    .process-progress-val {
+    .progress-fill {
       position: absolute;
       left: -40%;
       width: 40%;
       height: 100%;
-      background: var(--accent);
-      animation: indeterminate 1.6s infinite cubic-bezier(0.65, 0, 0.35, 1);
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      border-radius: 999px;
+      animation: progressSweep 1.8s infinite cubic-bezier(0.65, 0, 0.35, 1);
     }
 
-    @keyframes indeterminate {
+    @keyframes progressSweep {
       0% { left: -40%; }
       100% { left: 100%; }
     }
 
-    /* Output Section */
-    .results-panel {
+    /* Error Notification */
+    .error-card {
       display: none;
+      margin-top: 20px;
+      padding: 14px 18px;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: var(--radius-sm);
+      color: #fca5a5;
+      font-size: 0.84rem;
     }
 
-    .export-toolbar {
+    /* Results Showcase */
+    .results-section {
+      display: none;
+      margin-top: 40px;
+    }
+
+    .results-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding: 18px 24px;
+      background: var(--glass);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-top-left-radius: var(--radius-lg);
+      border-top-right-radius: var(--radius-lg);
+      border-bottom: none;
+    }
+
+    .results-title-group h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text);
+    }
+
+    .results-sub-meta {
+      font-size: 0.76rem;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      margin-top: 2px;
+    }
+
+    .export-buttons-group {
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
     }
 
-    .btn-export {
-      padding: 7px 14px;
-      background: var(--surface-raised);
+    .btn-glass-export {
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.04);
       border: 1px solid var(--border);
       color: var(--text);
-      font-size: 0.75rem;
+      font-family: var(--font-sans);
+      font-size: 0.78rem;
       font-weight: 600;
-      letter-spacing: 0.04em;
       cursor: pointer;
       text-decoration: none;
-      transition: background 0.15s, border-color 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
     }
 
-    .btn-export:hover {
-      background: var(--surface-hover);
-      border-color: var(--text-dim);
+    .btn-glass-export:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--border-focus);
     }
 
-    .btn-export.primary {
-      border-color: var(--accent);
-      color: var(--accent);
+    .btn-glass-export.accent-action {
+      background: rgba(225, 29, 72, 0.12);
+      border-color: rgba(225, 29, 72, 0.35);
+      color: #fda4af;
     }
 
-    .btn-export.primary:hover {
-      background: var(--accent);
+    .btn-glass-export.accent-action:hover {
+      background: rgba(225, 29, 72, 0.22);
+      border-color: rgba(225, 29, 72, 0.6);
       color: #ffffff;
     }
 
-    /* Rendered Notes Typography */
-    .notes-document {
-      background: var(--bg);
+    .notes-document-viewer {
+      background: rgba(10, 10, 14, 0.85);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
       border: 1px solid var(--border);
-      padding: 36px 32px;
-      font-size: 0.95rem;
-      line-height: 1.75;
+      border-bottom-left-radius: var(--radius-lg);
+      border-bottom-right-radius: var(--radius-lg);
+      padding: 44px 36px;
       color: #e4e4e7;
+      font-size: 0.98rem;
+      line-height: 1.8;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
     }
 
-    .notes-document h2 {
-      font-size: 1.15rem;
+    .notes-document-viewer h2 {
+      font-size: 1.28rem;
       font-weight: 700;
-      letter-spacing: -0.01em;
+      letter-spacing: -0.02em;
       color: #ffffff;
-      margin-top: 28px;
-      margin-bottom: 12px;
-      padding-bottom: 6px;
-      border-bottom: 1px solid var(--border-subtle);
+      margin-top: 36px;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     }
 
-    .notes-document h2:first-child { margin-top: 0; }
+    .notes-document-viewer h2:first-child { margin-top: 0; }
 
-    .notes-document ul, .notes-document ol {
-      margin-left: 20px;
-      margin-bottom: 16px;
+    .notes-document-viewer ul, .notes-document-viewer ol {
+      margin-left: 24px;
+      margin-bottom: 20px;
     }
 
-    .notes-document li {
-      margin-bottom: 6px;
+    .notes-document-viewer li {
+      margin-bottom: 8px;
     }
 
-    .notes-document strong {
+    .notes-document-viewer strong {
       color: #ffffff;
       font-weight: 600;
     }
 
-    .notes-document blockquote {
-      border-left: 2px solid var(--accent);
-      padding-left: 14px;
-      margin: 16px 0;
+    .notes-document-viewer blockquote {
+      border-left: 3px solid var(--accent);
+      padding: 10px 18px;
+      margin: 20px 0;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
       color: var(--text-muted);
-      font-size: 0.88rem;
+      font-size: 0.9rem;
     }
 
-    /* Error Notification */
-    .error-banner {
-      display: none;
-      margin-top: 16px;
-      padding: 12px 16px;
-      border: 1px solid #7f1d1d;
-      background: rgba(127, 29, 29, 0.2);
-      color: #fca5a5;
-      font-size: 0.82rem;
-    }
-
-    footer {
-      margin-top: 64px;
-      padding-top: 24px;
+    /* Comprehensive Editorial Footer */
+    .app-footer {
+      margin-top: 100px;
       border-top: 1px solid var(--border);
+      padding: 48px 0 32px;
+      background: rgba(6, 6, 8, 0.5);
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 36px;
+      margin-bottom: 48px;
+    }
+
+    @media (max-width: 780px) {
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 480px) {
+      .footer-grid { grid-template-columns: 1fr; }
+    }
+
+    .footer-col-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 14px;
+    }
+
+    .footer-brand-p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      max-width: 320px;
+    }
+
+    .footer-list {
+      list-style: none;
+    }
+
+    .footer-list li {
+      margin-bottom: 8px;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .footer-bottom-row {
       display: flex;
       justify-content: space-between;
+      align-items: center;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 0.74rem;
       color: var(--text-dim);
-      font-size: 0.75rem;
-      letter-spacing: 0.04em;
+      font-family: var(--font-mono);
     }
   </style>
 </head>
 <body>
 
-<div class="container">
-  <header class="header-bar">
-    <div>
-      <span class="brand-eyebrow">Academic Workspace</span>
-      <h1>Lecture Synthesis System</h1>
-      <p class="header-desc">
-        Deterministic transformation of lecture transcripts, presentation slides, and technical literature into structured revision syllabi.
+  <!-- Sticky Navigation Bar -->
+  <nav class="nav-bar">
+    <div class="nav-content">
+      <a href="/" class="brand-group">
+        <div class="brand-logo-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+        </div>
+        <span class="brand-title">SYNTEX</span>
+        <span class="brand-tag">C++17 COMPILER</span>
+      </a>
+
+      <div class="nav-actions">
+        <div class="status-pill" id="statusBadge">
+          <span class="status-beacon" id="statusBeacon"></span>
+          <span id="statusLabel">Initializing</span>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="app-container">
+
+    <!-- Hero Section -->
+    <header class="hero-section">
+      <div class="hero-badge">
+        <span>ARCHITECTURAL SPECIFICATION</span>
+        <span>&middot;</span>
+        <span>HIGH-CONCURRENCY LECTURE COMPILER</span>
+      </div>
+      <h1 class="hero-title">
+        From raw lectures to<br>
+        <span class="text-gradient">exam-ready revision mastery.</span>
+      </h1>
+      <p class="hero-subtitle">
+        An industrial C++ compiler that transforms multi-megabyte lecture transcripts, presentation slides, and academic texts into verified definitions, key concepts, and predictive examination inquiries.
       </p>
-    </div>
-    <div class="status-indicator" id="statusBadge">
-      <span class="status-dot" id="statusDot"></span>
-      <span id="statusText">System Initializing</span>
-    </div>
-  </header>
 
-  <div class="panel">
-    <div class="panel-header">
-      <span class="panel-title">Source Input Specification</span>
-      <span style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono);">PDF · DOCX · PPTX · TXT</span>
-    </div>
-    <div class="panel-body">
-      <form id="uploadForm">
-        <div class="dropzone" id="dropzone">
-          <div class="drop-heading">Select or drag lecture file</div>
-          <div class="drop-sub">Supported formats: PDF, Microsoft Word (DOCX), PowerPoint (PPTX), Plain Text (max 25 MB)</div>
-          <div class="file-meta" id="fileMeta"></div>
-          <input type="file" id="fileInput" name="lecture" accept=".pdf,.docx,.pptx,.ppt,.doc,.txt,.md">
+      <!-- Bento System Spec Strip -->
+      <div class="bento-strip">
+        <div class="bento-card">
+          <div class="bento-num">01 / CONCURRENCY</div>
+          <div class="bento-heading">Multi-Core ThreadPool</div>
+          <div class="bento-desc">Hardware core auto-detection with parallel chunk extraction across asynchronous threads.</div>
         </div>
-
-        <div class="sample-action">
-          <button type="button" class="btn-text" id="sampleBtn">Load verification sample (CS 301 Architecture)</button>
-          <span style="font-size: 0.72rem; color: var(--text-dim);">Concurrency: multi-threaded parallel chunking</span>
+        <div class="bento-card">
+          <div class="bento-num">02 / INGESTION</div>
+          <div class="bento-heading">Universal Normalization</div>
+          <div class="bento-desc">Headless LibreOffice and Poppler layout extraction for PDF, DOCX, PPTX, and TXT.</div>
         </div>
+        <div class="bento-card">
+          <div class="bento-num">03 / SYNTHESIS</div>
+          <div class="bento-heading">Academic Rigor</div>
+          <div class="bento-desc">Extractive AST parsing for definitions, invariant rules, and predictive exam questions.</div>
+        </div>
+        <div class="bento-card">
+          <div class="bento-num">04 / PUBLISHING</div>
+          <div class="bento-heading">Tri-Format Export</div>
+          <div class="bento-desc">Instant compile-to-disk for LaTeX-typeset PDF, Microsoft Word DOCX, and clean Markdown.</div>
+        </div>
+      </div>
+    </header>
 
-        <div class="form-grid">
-          <div class="control-group">
-            <label for="subjectSelect">Discipline Domain</label>
-            <select name="subject" id="subjectSelect">
-              <option value="Computer Science" selected>Computer Science & Engineering</option>
-              <option value="Mathematics">Mathematics & Formal Logic</option>
-              <option value="Physics">Physics & Applied Sciences</option>
-              <option value="Biology">Biology & Molecular Sciences</option>
-              <option value="Economics">Economics & Quantitative Finance</option>
-              <option value="Chemistry">Chemistry & Chemical Engineering</option>
-              <option value="Medicine">Medicine & Biomedical Sciences</option>
-              <option value="Law">Law & Jurisprudence</option>
-              <option value="History">History & Humanities</option>
-              <option value="General">General Academic Studies</option>
-            </select>
+    <!-- Main Workspace Panel -->
+    <main class="workspace-glass-card">
+      <div class="card-topbar">
+        <span class="card-topbar-title">Source Payload Ingestion</span>
+        <span class="card-topbar-spec">PORT 80 &middot; STREAM PIPELINE</span>
+      </div>
+
+      <div class="card-body">
+        <form id="uploadForm">
+          <div class="liquid-dropzone" id="dropzone">
+            <svg class="upload-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <div class="drop-main-text">Select or drag lecture file</div>
+            <div class="drop-sub-text">Drop your course document here for immediate multi-threaded processing</div>
+            <div class="format-pills">
+              <span class="format-tag">PDF</span>
+              <span class="format-tag">DOCX</span>
+              <span class="format-tag">PPTX</span>
+              <span class="format-tag">TXT</span>
+            </div>
+            <div class="file-attachment-badge" id="fileMeta"></div>
+            <input type="file" id="fileInput" name="lecture" accept=".pdf,.docx,.pptx,.ppt,.doc,.txt,.md">
           </div>
 
-          <div class="control-group">
-            <label for="levelSelect">Academic Rigor Level</label>
-            <select name="level" id="levelSelect">
-              <option value="Introductory">Foundational / Introductory</option>
-              <option value="Undergraduate" selected>Standard Undergraduate</option>
-              <option value="Advanced">Advanced Graduate Seminar</option>
-              <option value="Exam Prep">High-Yield Examination Synopsis</option>
-            </select>
+          <div class="sample-action-row">
+            <button type="button" class="btn-link-sample" id="sampleBtn">Load verification sample (CS 301 Architecture)</button>
+            <span class="pipeline-threads-badge" id="concurrencyBadge">Concurrency: Active</span>
+          </div>
+
+          <div class="controls-grid">
+            <div>
+              <label class="control-label" for="subjectSelect">Discipline Domain</label>
+              <select class="glass-select" name="subject" id="subjectSelect">
+                <option value="Computer Science" selected>Computer Science & Engineering</option>
+                <option value="Mathematics">Mathematics & Formal Logic</option>
+                <option value="Physics">Physics & Physical Sciences</option>
+                <option value="Biology">Biology & Life Sciences</option>
+                <option value="Economics">Economics & Quantitative Finance</option>
+                <option value="Chemistry">Chemistry & Chemical Sciences</option>
+                <option value="Medicine">Medicine & Biomedical Sciences</option>
+                <option value="Law">Law & Jurisprudence</option>
+                <option value="History">History & Humanities</option>
+                <option value="General">General Academic Studies</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="control-label" for="levelSelect">Academic Rigor Level</label>
+              <select class="glass-select" name="level" id="levelSelect">
+                <option value="Introductory">Foundational / Introductory</option>
+                <option value="Undergraduate" selected>Standard Undergraduate Core</option>
+                <option value="Advanced">Advanced Graduate Seminar</option>
+                <option value="Exam Prep">High-Yield Examination Cram</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-execute" id="submitBtn">
+            <span>Synthesize Revision Notes</span>
+          </button>
+        </form>
+
+        <div class="processing-card" id="processingCard">
+          <div class="processing-header">
+            <span class="processing-tag">Compiler Execution</span>
+            <span style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--text-dim);" id="stageCounter">Stage 1/5</span>
+          </div>
+          <div class="processing-desc" id="processingStep">Ingesting payload...</div>
+          <div class="progress-track">
+            <div class="progress-fill"></div>
           </div>
         </div>
 
-        <button type="submit" class="btn-submit" id="submitBtn">
-          Synthesize Revision Notes
-        </button>
-      </form>
-
-      <div class="error-banner" id="errorBanner"></div>
-    </div>
-  </div>
-
-  <div class="process-panel" id="processPanel">
-    <div class="process-label">Pipeline In Progress</div>
-    <div class="process-step" id="processStep">Ingesting payload...</div>
-    <div class="process-progress-bar">
-      <div class="process-progress-val"></div>
-    </div>
-  </div>
-
-  <div class="panel results-panel" id="resultsPanel">
-    <div class="panel-header">
-      <div>
-        <span class="panel-title" id="resultsTitle">Revision Notes</span>
-        <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 2px;" id="resultsMeta"></div>
+        <div class="error-card" id="errorCard"></div>
       </div>
-      <div class="export-toolbar">
-        <button class="btn-export primary" id="exportPdfBtn">Export PDF</button>
-        <button class="btn-export" id="exportDocxBtn">Export Word</button>
-        <button class="btn-export" id="exportMdBtn">Export Markdown</button>
-        <button class="btn-export" id="copyBtn">Copy Text</button>
+    </main>
+
+    <!-- Results Section -->
+    <section class="results-section" id="resultsSection">
+      <div class="results-toolbar">
+        <div class="results-title-group">
+          <h3 id="resultsHeading">Revision Notes</h3>
+          <div class="results-sub-meta" id="resultsMeta"></div>
+        </div>
+
+        <div class="export-buttons-group">
+          <button class="btn-glass-export accent-action" id="exportPdfBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="12" y1="18" x2="12" y2="12"></line>
+              <line x1="9" y1="15" x2="15" y2="15"></line>
+            </svg>
+            <span>Export PDF</span>
+          </button>
+
+          <button class="btn-glass-export" id="exportDocxBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+            <span>Export Word</span>
+          </button>
+
+          <button class="btn-glass-export" id="exportMdBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="16 18 22 12 16 6"></polyline>
+              <polyline points="8 6 2 12 8 18"></polyline>
+            </svg>
+            <span>Export Markdown</span>
+          </button>
+
+          <button class="btn-glass-export" id="copyBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span>Copy Text</span>
+          </button>
+        </div>
       </div>
-    </div>
-    <div class="panel-body">
-      <div class="notes-document" id="notesDocument"></div>
-    </div>
+
+      <article class="notes-document-viewer" id="notesViewer"></article>
+    </section>
+
+    <!-- Comprehensive Editorial Footer -->
+    <footer class="app-footer">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-col-title">SYNTEX ACADEMIC ENGINE</div>
+          <p class="footer-brand-p">
+            High-performance C++17 workspace for automated lecture synthesis, multi-format normalization, and deterministic syllabus generation.
+          </p>
+        </div>
+        <div>
+          <div class="footer-col-title">Core Subsystems</div>
+          <ul class="footer-list">
+            <li>C++17 Multi-threading</li>
+            <li>cpp-httplib Server</li>
+            <li>libcurl Network Layer</li>
+            <li>Poppler Text Layout</li>
+          </ul>
+        </div>
+        <div>
+          <div class="footer-col-title">Input & Output</div>
+          <ul class="footer-list">
+            <li>PDF Ingestion</li>
+            <li>DOCX & PPTX Normalization</li>
+            <li>LaTeX Typeset PDF</li>
+            <li>Word & Markdown Export</li>
+          </ul>
+        </div>
+        <div>
+          <div class="footer-col-title">Infrastructure</div>
+          <ul class="footer-list">
+            <li>Target Port: 80 HTTP</li>
+            <li>EC2 Host: 15.252.157.8</li>
+            <li>Linux Systemd Service</li>
+            <li>Thread-Safe LRU Cache</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom-row">
+        <span>&copy; 2026 Syntex Academic Workspace. All rights reserved.</span>
+        <span id="footerDiagnostic">System Active &middot; Port 80 Ready</span>
+      </div>
+    </footer>
+
   </div>
 
-  <footer>
-    <span>C++17 Engine &middot; cpp-httplib &middot; poppler-utils &middot; pandoc &middot; libreoffice</span>
-    <span id="footerMode">Port 80 Mode</span>
-  </footer>
-</div>
+  <script>
+    let activeNoteId = null;
+    let activeNotesContent = "";
+    let activeSubjectSlug = "Revision_Notes";
 
-<script>
-  let activeNoteId = null;
-  let activeNotesContent = "";
-  let activeSubjectSlug = "Lecture";
+    const fileInput = document.getElementById('fileInput');
+    const fileMeta = document.getElementById('fileMeta');
+    const dropzone = document.getElementById('dropzone');
+    const uploadForm = document.getElementById('uploadForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const processingCard = document.getElementById('processingCard');
+    const processingStep = document.getElementById('processingStep');
+    const stageCounter = document.getElementById('stageCounter');
+    const errorCard = document.getElementById('errorCard');
+    const resultsSection = document.getElementById('resultsSection');
+    const notesViewer = document.getElementById('notesViewer');
+    const resultsMeta = document.getElementById('resultsMeta');
+    const copyBtn = document.getElementById('copyBtn');
+    const sampleBtn = document.getElementById('sampleBtn');
+    const statusBeacon = document.getElementById('statusBeacon');
+    const statusLabel = document.getElementById('statusLabel');
+    const footerDiagnostic = document.getElementById('footerDiagnostic');
+    const concurrencyBadge = document.getElementById('concurrencyBadge');
 
-  const fileInput = document.getElementById('fileInput');
-  const fileMeta = document.getElementById('fileMeta');
-  const dropzone = document.getElementById('dropzone');
-  const uploadForm = document.getElementById('uploadForm');
-  const submitBtn = document.getElementById('submitBtn');
-  const processPanel = document.getElementById('processPanel');
-  const processStep = document.getElementById('processStep');
-  const errorBanner = document.getElementById('errorBanner');
-  const resultsPanel = document.getElementById('resultsPanel');
-  const notesDocument = document.getElementById('notesDocument');
-  const resultsMeta = document.getElementById('resultsMeta');
-  const copyBtn = document.getElementById('copyBtn');
-  const sampleBtn = document.getElementById('sampleBtn');
-  const statusDot = document.getElementById('statusDot');
-  const statusText = document.getElementById('statusText');
-  const footerMode = document.getElementById('footerMode');
-
-  // File picker handler
-  fileInput.addEventListener('change', () => {
-    if (fileInput.files.length > 0) {
-      const f = fileInput.files[0];
-      const mb = (f.size / (1024 * 1024)).toFixed(2);
-      fileMeta.textContent = `Attached: ${f.name} [${mb} MB]`;
-      fileMeta.style.display = 'block';
-    } else {
-      fileMeta.style.display = 'none';
-    }
-  });
-
-  // Drag and drop events
-  ['dragenter', 'dragover'].forEach(name => {
-    dropzone.addEventListener(name, (e) => {
-      e.preventDefault();
-      dropzone.classList.add('dragover');
-    });
-  });
-  ['dragleave', 'drop'].forEach(name => {
-    dropzone.addEventListener(name, (e) => {
-      e.preventDefault();
-      dropzone.classList.remove('dragover');
-    });
-  });
-
-  // Config check
-  async function syncConfiguration() {
-    try {
-      const res = await fetch('/config');
-      const data = await res.json();
-      if (data.testing_mode) {
-        statusDot.className = 'status-dot';
-        statusText.textContent = 'Local Testing Engine';
-        footerMode.textContent = 'Local Extractive Synthesis (Testing)';
+    // File input change
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+        fileMeta.textContent = `Attached: ${file.name} (${sizeMb} MB)`;
+        fileMeta.style.display = 'block';
       } else {
-        statusDot.className = 'status-dot active';
-        statusText.textContent = `Claude AI Connected`;
-        footerMode.textContent = `Anthropic API: ${data.model}`;
+        fileMeta.style.display = 'none';
       }
-    } catch (err) {
-      statusText.textContent = 'Offline / Local';
-    }
-  }
-  syncConfiguration();
+    });
 
-  // Instant verification sample
-  sampleBtn.addEventListener('click', async () => {
-    try {
-      sampleBtn.textContent = "Loading sample...";
-      const resp = await fetch('/sample_lecture_os.pdf');
-      const blob = await resp.blob();
-      const file = new File([blob], "lecture_operating_systems.pdf", { type: "application/pdf" });
-      const dt = new DataTransfer();
-      dt.items.add(file);
-      fileInput.files = dt.files;
-      const mb = (file.size / (1024 * 1024)).toFixed(2);
-      fileMeta.textContent = `Attached: ${file.name} [${mb} MB]`;
-      fileMeta.style.display = 'block';
-      sampleBtn.textContent = "Sample Attached";
-      setTimeout(() => {
-        sampleBtn.textContent = "Load verification sample (CS 301 Architecture)";
-      }, 3000);
-    } catch (e) {
-      alert("Failed to load sample: " + e.message);
-      sampleBtn.textContent = "Load verification sample (CS 301 Architecture)";
-    }
-  });
-
-  const pipelineStages = [
-    "Reading file payload and verifying format...",
-    "Extracting document text and layout boundaries...",
-    "Executing parallel chunk analysis across worker threads...",
-    "Extracting core terminology and invariant definitions...",
-    "Synthesizing examination inquiries and finalizing document..."
-  ];
-
-  // Submission
-  uploadForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    errorBanner.style.display = 'none';
-    resultsPanel.style.display = 'none';
-
-    if (!fileInput.files.length) {
-      errorBanner.textContent = "Please specify a document file to synthesize.";
-      errorBanner.style.display = 'block';
-      return;
-    }
-
-    processPanel.style.display = 'block';
-    submitBtn.disabled = true;
-
-    let stage = 0;
-    processStep.textContent = pipelineStages[stage];
-    const stageTimer = setInterval(() => {
-      if (stage < pipelineStages.length - 1) {
-        stage++;
-        processStep.textContent = pipelineStages[stage];
-      }
-    }, 2400);
-
-    const formData = new FormData(uploadForm);
-    activeSubjectSlug = document.getElementById('subjectSelect').value.replace(/[^a-zA-Z0-9]/g, '_');
-
-    try {
-      const response = await fetch('/generate', {
-        method: 'POST',
-        body: formData
+    // Drag and drop events
+    ['dragenter', 'dragover'].forEach(name => {
+      dropzone.addEventListener(name, (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
       });
+    });
+    ['dragleave', 'drop'].forEach(name => {
+      dropzone.addEventListener(name, (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+      });
+    });
 
-      clearInterval(stageTimer);
-      processPanel.style.display = 'none';
-      submitBtn.disabled = false;
+    // Sync system configuration
+    async function syncConfig() {
+      try {
+        const res = await fetch('/config');
+        const data = await res.json();
+        if (data.testing_mode) {
+          statusBeacon.className = 'status-beacon';
+          statusLabel.textContent = 'Testing Engine';
+          footerDiagnostic.textContent = 'Local Extractive Synthesis (No API key needed)';
+          concurrencyBadge.textContent = 'Concurrency: 16 Worker Threads';
+        } else {
+          statusBeacon.className = 'status-beacon active';
+          statusLabel.textContent = 'Claude AI Connected';
+          footerDiagnostic.textContent = `Anthropic API Connected (${data.model})`;
+          concurrencyBadge.textContent = 'Concurrency: Parallel Workers Active';
+        }
+      } catch (err) {
+        statusLabel.textContent = 'Local Standalone';
+      }
+    }
+    syncConfig();
 
-      const data = await response.json();
+    // Sample Document Loader
+    sampleBtn.addEventListener('click', async () => {
+      try {
+        sampleBtn.textContent = 'Fetching sample...';
+        const resp = await fetch('/sample_lecture_os.pdf');
+        const blob = await resp.blob();
+        const file = new File([blob], 'lecture_operating_systems.pdf', { type: 'application/pdf' });
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        fileInput.files = dt.files;
+        const mb = (file.size / (1024 * 1024)).toFixed(2);
+        fileMeta.textContent = `Attached: ${file.name} (${mb} MB)`;
+        fileMeta.style.display = 'block';
+        sampleBtn.textContent = 'Sample Attached';
+        setTimeout(() => {
+          sampleBtn.textContent = 'Load verification sample (CS 301 Architecture)';
+        }, 2500);
+      } catch (err) {
+        alert('Failed to load sample: ' + err.message);
+        sampleBtn.textContent = 'Load verification sample (CS 301 Architecture)';
+      }
+    });
 
-      if (!response.ok || data.error) {
-        throw new Error(data.error || ("HTTP failure: " + response.status));
+    const executionStages = [
+      "Ingesting course payload and validating MIME headers...",
+      "Extracting structural text layout and page boundaries...",
+      "Dispatching multi-chunk parallel threads to inference core...",
+      "Extracting invariant theorems and domain definitions...",
+      "Compiling examination inquiries and formatting document..."
+    ];
+
+    // Form submission
+    uploadForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorCard.style.display = 'none';
+      resultsSection.style.display = 'none';
+
+      if (!fileInput.files.length) {
+        errorCard.textContent = "Please attach a document file (PDF, Word, or PowerPoint).";
+        errorCard.style.display = 'block';
+        return;
       }
 
-      activeNoteId = data.id;
-      activeNotesContent = data.notes;
+      processingCard.style.display = 'block';
+      submitBtn.disabled = true;
 
-      if (window.marked) {
-        notesDocument.innerHTML = marked.parse(data.notes);
-      } else {
-        notesDocument.textContent = data.notes;
+      let stage = 0;
+      processingStep.textContent = executionStages[stage];
+      stageCounter.textContent = `Stage ${stage + 1}/5`;
+
+      const stageTimer = setInterval(() => {
+        if (stage < executionStages.length - 1) {
+          stage++;
+          processingStep.textContent = executionStages[stage];
+          stageCounter.textContent = `Stage ${stage + 1}/5`;
+        }
+      }, 2200);
+
+      const formData = new FormData(uploadForm);
+      activeSubjectSlug = document.getElementById('subjectSelect').value.replace(/[^a-zA-Z0-9]/g, '_');
+
+      try {
+        const response = await fetch('/generate', {
+          method: 'POST',
+          body: formData
+        });
+
+        clearInterval(stageTimer);
+        processingCard.style.display = 'none';
+        submitBtn.disabled = false;
+
+        const data = await response.json();
+
+        if (!response.ok || data.error) {
+          throw new Error(data.error || ("HTTP error: " + response.status));
+        }
+
+        activeNoteId = data.id;
+        activeNotesContent = data.notes;
+
+        if (window.marked) {
+          notesViewer.innerHTML = marked.parse(data.notes);
+        } else {
+          notesViewer.textContent = data.notes;
+        }
+
+        resultsMeta.textContent = `Discipline: ${data.subject} | Rigor: ${data.level} | Identifier: ${data.id}`;
+        resultsSection.style.display = 'block';
+        resultsSection.scrollIntoView({ behavior: 'smooth' });
+
+      } catch (err) {
+        clearInterval(stageTimer);
+        processingCard.style.display = 'none';
+        submitBtn.disabled = false;
+        errorCard.textContent = err.message || "Synthesis process failed.";
+        errorCard.style.display = 'block';
       }
+    });
 
-      resultsMeta.textContent = `Discipline: ${data.subject} | Level: ${data.level} | Identifier: ${data.id}`;
-      resultsPanel.style.display = 'block';
-      resultsPanel.scrollIntoView({ behavior: 'smooth' });
+    // Export Handlers
+    document.getElementById('exportPdfBtn').addEventListener('click', () => {
+      if (activeNoteId) {
+        window.location.href = `/download?id=${encodeURIComponent(activeNoteId)}&format=pdf&title=${encodeURIComponent(activeSubjectSlug + '_Synopsis')}`;
+      }
+    });
 
-    } catch (err) {
-      clearInterval(stageTimer);
-      processPanel.style.display = 'none';
-      submitBtn.disabled = false;
-      errorBanner.textContent = err.message || "Synthesis process failed.";
-      errorBanner.style.display = 'block';
-    }
-  });
+    document.getElementById('exportDocxBtn').addEventListener('click', () => {
+      if (activeNoteId) {
+        window.location.href = `/download?id=${encodeURIComponent(activeNoteId)}&format=docx&title=${encodeURIComponent(activeSubjectSlug + '_Synopsis')}`;
+      }
+    });
 
-  // Export handlers
-  document.getElementById('exportPdfBtn').addEventListener('click', () => {
-    if (activeNoteId) {
-      window.location.href = `/download?id=${encodeURIComponent(activeNoteId)}&format=pdf&title=${encodeURIComponent(activeSubjectSlug + '_Synopsis')}`;
-    }
-  });
+    document.getElementById('exportMdBtn').addEventListener('click', () => {
+      if (activeNoteId) {
+        window.location.href = `/download?id=${encodeURIComponent(activeNoteId)}&format=md&title=${encodeURIComponent(activeSubjectSlug + '_Synopsis')}`;
+      }
+    });
 
-  document.getElementById('exportDocxBtn').addEventListener('click', () => {
-    if (activeNoteId) {
-      window.location.href = `/download?id=${encodeURIComponent(activeNoteId)}&format=docx&title=${encodeURIComponent(activeSubjectSlug + '_Synopsis')}`;
-    }
-  });
-
-  document.getElementById('exportMdBtn').addEventListener('click', () => {
-    if (activeNoteId) {
-      window.location.href = `/download?id=${encodeURIComponent(activeNoteId)}&format=md&title=${encodeURIComponent(activeSubjectSlug + '_Synopsis')}`;
-    }
-  });
-
-  copyBtn.addEventListener('click', async () => {
-    if (!activeNotesContent) return;
-    try {
-      await navigator.clipboard.writeText(activeNotesContent);
-      const original = copyBtn.textContent;
-      copyBtn.textContent = "Copied";
-      setTimeout(() => { copyBtn.textContent = original; }, 2000);
-    } catch (e) {
-      alert("Note text copied to clipboard.");
-    }
-  });
-</script>
+    copyBtn.addEventListener('click', async () => {
+      if (!activeNotesContent) return;
+      try {
+        await navigator.clipboard.writeText(activeNotesContent);
+        const original = copyBtn.innerHTML;
+        copyBtn.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span>Copied</span>
+        `;
+        setTimeout(() => { copyBtn.innerHTML = original; }, 2000);
+      } catch (err) {
+        alert("Copied to clipboard.");
+      }
+    });
+  </script>
 
 </body>
 </html>
