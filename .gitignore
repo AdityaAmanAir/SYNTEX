@@ -15,3 +15,6 @@ bin/
 # Upload and export caches
 /tmp/
 *.tmp
+
+# Secrets
+.env

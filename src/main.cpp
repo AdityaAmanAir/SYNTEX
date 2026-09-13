@@ -1,6 +1,7 @@
 #include "httplib.h"
 #include "pdf_extract.h"
 #include "notes_builder.h"
+#include "env_loader.h"
 #include <nlohmann/json.hpp>
 #include <fstream>
 #include <sstream>
@@ -92,18 +93,59 @@ static bool convertMarkdownToExport(const std::string& mdPath, const std::string
 }
 
 int main() {
+    // Load configuration from .env file if present
+    loadEnvFile(".env");
+
     httplib::Server svr;
     std::string promptTemplate = loadFile("prompts/notes_prompt.txt");
 
-    // 25MB max upload payload
-    svr.set_payload_max_length(25 * 1024 * 1024);
+    // Configurable max upload payload (default 25MB)
+    int maxUploadMb = 25;
+    const char* uploadEnv = std::getenv("MAX_UPLOAD_MB");
+    if (uploadEnv && *uploadEnv) {
+        try { maxUploadMb = std::stoi(uploadEnv); } catch (...) {}
+    }
+    svr.set_payload_max_length(maxUploadMb * 1024 * 1024);
 
     // Serve frontend static files
     svr.set_mount_point("/", "./web");
 
     // Health check endpoint
     svr.Get("/health", [](const httplib::Request&, httplib::Response& res) {
-        res.set_content("{\"status\":\"healthy\",\"service\":\"ai-student-workspace\"}", "application/json");
+        const char* apiKey = std::getenv("ANTHROPIC_API_KEY");
+        const char* mockEnv = std::getenv("MOCK_LLM");
+        bool isMock = (mockEnv && (std::string(mockEnv) == "1" || std::string(mockEnv) == "true")) ||
+                      (!apiKey || std::string(apiKey).empty() ||
+                       std::string(apiKey).find("your-") != std::string::npos ||
+                       std::string(apiKey).find("your_key") != std::string::npos);
+
+        json h = {
+            {"status", "healthy"},
+            {"service", "ai-student-workspace"},
+            {"testing_mode", isMock}
+        };
+        res.set_content(h.dump(), "application/json");
+    });
+
+    // Configuration / status endpoint for frontend badge & settings
+    svr.Get("/config", [](const httplib::Request&, httplib::Response& res) {
+        res.set_header("Access-Control-Allow-Origin", "*");
+        const char* apiKey = std::getenv("ANTHROPIC_API_KEY");
+        const char* mockEnv = std::getenv("MOCK_LLM");
+        bool isMock = (mockEnv && (std::string(mockEnv) == "1" || std::string(mockEnv) == "true")) ||
+                      (!apiKey || std::string(apiKey).empty() ||
+                       std::string(apiKey).find("your-") != std::string::npos ||
+                       std::string(apiKey).find("your_key") != std::string::npos);
+
+        const char* modelEnv = std::getenv("ANTHROPIC_MODEL");
+        std::string model = (modelEnv && *modelEnv) ? modelEnv : "claude-3-5-sonnet-20241022";
+
+        json cfg = {
+            {"testing_mode", isMock},
+            {"model", model},
+            {"has_api_key", !isMock}
+        };
+        res.set_content(cfg.dump(), "application/json");
     });
 
     // POST /generate : Core endpoint
@@ -325,7 +367,11 @@ int main() {
         res.set_content(fileData, contentType);
     });
 
-    // Configurable port (default 8080 locally, or 80 if PORT=80)
+    // Configurable host and port
+    std::string host = "0.0.0.0";
+    const char* hostEnv = std::getenv("HOST");
+    if (hostEnv && *hostEnv) host = hostEnv;
+
     int port = 8080;
     const char* portEnv = std::getenv("PORT");
     if (portEnv && *portEnv) {
@@ -336,15 +382,27 @@ int main() {
         }
     }
 
+    const char* apiKey = std::getenv("ANTHROPIC_API_KEY");
+    const char* mockEnv = std::getenv("MOCK_LLM");
+    bool isMock = (mockEnv && (std::string(mockEnv) == "1" || std::string(mockEnv) == "true")) ||
+                  (!apiKey || std::string(apiKey).empty() ||
+                   std::string(apiKey).find("your-") != std::string::npos ||
+                   std::string(apiKey).find("your_key") != std::string::npos);
+
+    const char* modelEnv = std::getenv("ANTHROPIC_MODEL");
+    std::string model = (modelEnv && *modelEnv) ? modelEnv : "claude-3-5-sonnet-20241022";
+
     std::cout << "=================================================\n";
     std::cout << "  AI-Powered Student Workspace Backend (C++17)   \n";
-    std::cout << "  Listening on: http://0.0.0.0:" << port << "\n";
+    std::cout << "  Listening on: http://" << host << ":" << port << "\n";
+    std::cout << "  Status: " << (isMock ? "🧪 Local Testing Mode (No API key needed)" : "⚡ Live Claude API Connected") << "\n";
+    if (!isMock) std::cout << "  Model: " << model << "\n";
     std::cout << "  Export formats: Markdown (.md), PDF (.pdf), Word (.docx)\n";
     std::cout << "  Input formats: PDF, DOCX, PPTX, TXT, MD\n";
     std::cout << "=================================================\n";
 
-    if (!svr.listen("0.0.0.0", port)) {
-        std::cerr << "[ERROR] Could not bind to port " << port
+    if (!svr.listen(host.c_str(), port)) {
+        std::cerr << "[ERROR] Could not bind to " << host << ":" << port
                   << ". If using port 80, ensure CAP_NET_BIND_SERVICE or sudo is set.\n";
         return 1;
     }

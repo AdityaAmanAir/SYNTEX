@@ -1,11 +1,14 @@
 #include "pdf_extract.h"
 #include "notes_builder.h"
 #include "llm_client.h"
+#include "env_loader.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
 
 int main(int argc, char* argv[]) {
+    loadEnvFile(".env");
+
     if (argc < 2) {
         std::cout << "Usage: ./cli_test <document-file> [subject] [level]\n";
         std::cout << "Example: ./cli_test sample.pdf \"Computer Science\" \"Advanced\"\n";

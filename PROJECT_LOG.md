@@ -65,6 +65,16 @@ _(so nobody burns an hour retrying something already ruled out)_
 ## 7. Session Log
 _(append only — newest entry at the top)_
 
+### 2026-09-13 12:22 UTC — Antigravity AI
+- **Changed:**
+  - Added native C++ `.env` configuration loader ([src/env_loader.h](file:///home/aditya-aman/promptwar/src/env_loader.h)) parsing `PORT`, `HOST`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `MOCK_LLM`, and upload limits.
+  - Upgraded [src/llm_client.cpp](file:///home/aditya-aman/promptwar/src/llm_client.cpp) with an intelligent document-aware testing mode: automatically synthesizes structured notes, key definitions, and exam questions directly from uploaded material without requiring an API key.
+  - Added `GET /config` endpoint and interactive frontend mode badge in [web/index.html](file:///home/aditya-aman/promptwar/web/index.html) to indicate Testing Mode vs Live Claude.
+  - Added 1-click sample lecture loading in web UI.
+  - Created [.env](file:///home/aditya-aman/promptwar/.env) and [.env.example](file:///home/aditya-aman/promptwar/.env.example).
+- **Why:** Allow immediate zero-cost local testing without an API key while keeping all critical parameters centrally managed via `.env`.
+- **Result:** Successfully builds, loads `.env` on boot, runs testing mode when key is absent, and seamlessly connects to Claude when key is populated.
+
 ### 2026-09-13 12:15 UTC — Antigravity AI
 - **Changed:**
   - Implemented full C++17 student workspace backend (`pdf_extract`, `llm_client`, `notes_builder`, `main`).

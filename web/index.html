@@ -311,7 +311,7 @@
 
 <div class="container">
   <header>
-    <div class="badge">C++17 Engine + Claude AI</div>
+    <div class="badge" id="modeBadge">🧪 Testing Mode Active (No API Key Required)</div>
     <h1>AI-Powered Student Workspace</h1>
     <p class="subtitle">Transform messy lecture slides & documents into clean, exam-ready revision notes</p>
   </header>
@@ -327,7 +327,13 @@
           Supported formats: PDF, DOCX, PPTX, TXT, MD (up to 25MB)
         </div>
         <div class="file-info" id="fileInfo"></div>
-        <input type="file" id="fileInput" name="lecture" accept=".pdf,.docx,.pptx,.ppt,.doc,.txt,.md" required>
+        <input type="file" id="fileInput" name="lecture" accept=".pdf,.docx,.pptx,.ppt,.doc,.txt,.md">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
+        <button type="button" id="sampleBtn" style="background: rgba(56,189,248,0.1); border: 1px dashed var(--accent); color: var(--accent); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; width: auto;">
+          ⚡ Or Click to Load Sample CS Lecture (Instant Demo)
+        </button>
       </div>
 
       <div class="form-grid">
@@ -541,6 +547,56 @@
       alert("Copied notes to clipboard!");
     }
   });
+
+  // Config check for Testing Mode vs Live Claude
+  async function checkConfig() {
+    try {
+      const res = await fetch('/config');
+      const data = await res.json();
+      const badge = document.getElementById('modeBadge');
+      if (data.testing_mode) {
+        badge.textContent = '🧪 Testing Mode Active (No API Key Needed)';
+        badge.style.background = 'rgba(234, 179, 8, 0.15)';
+        badge.style.color = '#facc15';
+        badge.style.borderColor = 'rgba(234, 179, 8, 0.3)';
+        badge.title = 'Running in offline testing mode via .env (MOCK_LLM=1). Set ANTHROPIC_API_KEY in .env to connect to Claude.';
+      } else {
+        badge.textContent = `⚡ Claude AI Connected (${data.model})`;
+        badge.style.background = 'rgba(16, 185, 129, 0.15)';
+        badge.style.color = '#34d399';
+        badge.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+        badge.title = 'Connected to Anthropic API using key from .env.';
+      }
+    } catch (e) {
+      console.warn("Could not retrieve /config:", e);
+    }
+  }
+  checkConfig();
+
+  // Instant Sample Lecture Loader
+  const sampleBtn = document.getElementById('sampleBtn');
+  if (sampleBtn) {
+    sampleBtn.addEventListener('click', async () => {
+      try {
+        sampleBtn.textContent = "⏳ Loading sample...";
+        const resp = await fetch('/sample_lecture_os.pdf');
+        const blob = await resp.blob();
+        const file = new File([blob], "sample_lecture_os.pdf", { type: "application/pdf" });
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        fileInput.files = dt.files;
+        fileInfo.textContent = `Selected: sample_lecture_os.pdf (${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
+        fileInfo.style.display = 'block';
+        sampleBtn.textContent = "✓ Sample Lecture Loaded";
+        setTimeout(() => {
+          sampleBtn.textContent = "⚡ Or Click to Load Sample CS Lecture (Instant Demo)";
+        }, 3000);
+      } catch (err) {
+        alert("Failed to load sample: " + err.message);
+        sampleBtn.textContent = "⚡ Or Click to Load Sample CS Lecture (Instant Demo)";
+      }
+    });
+  }
 </script>
 
 </body>
