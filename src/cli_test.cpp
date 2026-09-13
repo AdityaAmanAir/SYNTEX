@@ -2,9 +2,13 @@
 #include "notes_builder.h"
 #include "llm_client.h"
 #include "env_loader.h"
+#include "ml_bridge.h"
+#include <nlohmann/json.hpp>
 #include <iostream>
 #include <fstream>
 #include <sstream>
+
+using json = nlohmann::json;
 
 int main(int argc, char* argv[]) {
     loadEnvFile(".env");
@@ -30,8 +34,27 @@ int main(int argc, char* argv[]) {
         std::string rawText = extractTextFromFile(filePath);
         std::cout << "Extracted " << rawText.size() << " characters of text.\n";
 
-        std::cout << "\n[Step 2] Loading prompt template...\n";
-        std::ifstream promptFile("prompts/notes_prompt.txt");
+        std::cout << "\n[Step 2] Executing Python ML analysis (scikit-learn TF-IDF)...\n";
+        json mlInsights = runPythonML(rawText, subject, level);
+        if (mlInsights.contains("top_keywords")) {
+            std::cout << "Top Extracted ML Keywords:\n";
+            for (const auto& kw : mlInsights["top_keywords"]) {
+                std::cout << "  - " << kw.value("term", "") << " (" << kw.value("relevance_pct", 0) << "% relevance)\n";
+            }
+        }
+        if (mlInsights.contains("stats")) {
+            auto stats = mlInsights["stats"];
+            std::cout << "Document Stats: " << stats.value("total_words", 0) << " words | "
+                      << stats.value("sentence_count", 0) << " sentences | Est. Study: "
+                      << stats.value("est_study_minutes", 0) << " mins\n";
+        }
+
+        std::cout << "\n[Step 3] Loading prompt template...\n";
+        std::string promptPath = "prompts/notes_prompt.txt";
+        if (!std::ifstream(promptPath).good() && std::ifstream("../" + promptPath).good()) {
+            promptPath = "../" + promptPath;
+        }
+        std::ifstream promptFile(promptPath);
         std::stringstream ss;
         if (promptFile.is_open()) {
             ss << promptFile.rdbuf();
@@ -42,7 +65,7 @@ int main(int argc, char* argv[]) {
         }
         std::string promptTemplate = ss.str();
 
-        std::cout << "\n[Step 3] Building revision notes...\n";
+        std::cout << "\n[Step 4] Building revision notes...\n";
         std::string notes = buildNotes(rawText, subject, promptTemplate, level);
 
         std::cout << "\n================ RESULT ================\n";

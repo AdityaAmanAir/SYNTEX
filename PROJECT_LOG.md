@@ -65,6 +65,24 @@ _(so nobody burns an hour retrying something already ruled out)_
 ## 7. Session Log
 _(append only — newest entry at the top)_
 
+### 2026-09-13 14:45 UTC — Antigravity AI
+- **Changed:**
+  - Added persistent server storage for uploaded files in `uploads/` with unique identifier hashing, JSON metadata tracking (`_meta.json`), and dedicated retrieval endpoints:
+    - `GET /file?id=<id>` (downloads original uploaded file with correct MIME type and original filename headers).
+    - `GET /stored-files` (returns JSON array of all stored files and metadata).
+  - Integrated Python Scikit-Learn Machine Learning Pipeline (`scripts/ml_processor.py` & `src/ml_bridge.cpp`):
+    - TF-IDF N-gram key concept extraction with normalized relevance scoring (0-100%).
+    - TextRank-inspired extractive summarization using sentence-level pairwise cosine similarity centrality.
+    - Lexical statistics (word count, sentence count, lexical diversity %, study time estimate, academic complexity scoring).
+    - Built-in graceful pure-Python fallback if scikit-learn is not present.
+  - Upgraded Liquid Glass UI (`web/index.html`):
+    - Added Stored File Banner with 1-click download of the stored source document.
+    - Added Python ML Document Intelligence Panel with metrics grid, TF-IDF concept pills, and cosine centrality summary.
+  - Added `requirements.txt` for Python dependencies (`scikit-learn`, `numpy`).
+  - Standardized `req.files` lookup in `src/main.cpp` for Fedora/EC2 cpp-httplib build compatibility.
+- **Why:** Satisfy user requirement to persistently store uploaded lecture files on the server, process them with a well-known Python ML library (scikit-learn TF-IDF + cosine centrality), pass structured JSON back to the C++ server, and display the intelligence in the UI.
+- **Result:** 100% build pass, verified `/generate`, `/file`, `/stored-files`, `/download` endpoints, and standalone CLI test.
+
 ### 2026-09-13 13:22 UTC — Antigravity AI
 - **Changed:**
   - Redesigned [web/index.html](file:///home/aditya-aman/promptwar/web/index.html) with an Apple-inspired Liquid Glass aesthetic (`backdrop-filter: blur(28px) saturate(180%)`, specular light edges, atmospheric radial mesh gradients).

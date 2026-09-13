@@ -12,6 +12,7 @@ add_executable(server
     src/pdf_extract.cpp
     src/llm_client.cpp
     src/notes_builder.cpp
+    src/ml_bridge.cpp
 )
 
 target_include_directories(server BEFORE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -23,6 +24,7 @@ add_executable(cli_test
     src/pdf_extract.cpp
     src/llm_client.cpp
     src/notes_builder.cpp
+    src/ml_bridge.cpp
 )
 target_include_directories(cli_test BEFORE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(cli_test PRIVATE CURL::libcurl pthread)

@@ -2,6 +2,7 @@
 #include "pdf_extract.h"
 #include "notes_builder.h"
 #include "env_loader.h"
+#include "ml_bridge.h"
 #include <nlohmann/json.hpp>
 #include <fstream>
 #include <sstream>
@@ -130,6 +131,13 @@ int main() {
     }
     svr.set_mount_point("/", webDir);
 
+    // Ensure uploads directory exists for persistent server storage
+    std::string uploadsDir = "./uploads";
+    if (!fs::exists(uploadsDir) && fs::exists("../uploads")) {
+        uploadsDir = "../uploads";
+    }
+    fs::create_directories(uploadsDir);
+
     // Health check endpoint
     svr.Get("/health", [](const httplib::Request&, httplib::Response& res) {
         const char* apiKey = std::getenv("ANTHROPIC_API_KEY");
@@ -206,37 +214,55 @@ int main() {
             }
         }
 
-        // Determine extension from original filename
+        // Determine extension and safe filename
         std::string origFilename = file.filename;
+        if (origFilename.empty()) origFilename = "lecture_document.pdf";
+        std::string safeName = fs::path(origFilename).filename().string();
         std::string ext = fs::path(origFilename).extension().string();
         if (ext.empty()) ext = ".pdf";
 
-        // Safe unique temporary filename
+        // Safe unique file identifier for persistent server storage
         std::string uniqueId = generateUniqueId();
-        std::string tmpUploadPath = "/tmp/upload_" + uniqueId + ext;
+        std::string storedFilePath = uploadsDir + "/" + uniqueId + "_" + safeName;
 
-        std::ofstream out(tmpUploadPath, std::ios::binary);
+        std::ofstream out(storedFilePath, std::ios::binary);
         if (!out.is_open()) {
             res.status = 500;
-            res.set_content("{\"error\":\"Failed to save temporary upload on server.\"}", "application/json");
+            res.set_content("{\"error\":\"Failed to store uploaded file on server.\"}", "application/json");
             return;
         }
         out.write(file.content.data(), file.content.size());
         out.close();
 
+        // Write file metadata JSON on the server
+        json fileMeta = {
+            {"id", uniqueId},
+            {"original_filename", safeName},
+            {"size_bytes", file.content.size()},
+            {"subject", subject},
+            {"level", level},
+            {"download_url", "/file?id=" + uniqueId}
+        };
+        std::ofstream metaOut(uploadsDir + "/" + uniqueId + "_meta.json");
+        if (metaOut.is_open()) {
+            metaOut << fileMeta.dump(2);
+            metaOut.close();
+        }
+
         try {
-            std::cout << "\n[REQUEST] New generation request | File: " << origFilename
+            std::cout << "\n[UPLOAD] File stored on server: " << storedFilePath
                       << " (" << file.content.size() << " bytes) | Subject: " << subject
                       << " | Level: " << level << "\n";
 
-            // Multi-format extract (PDF, PPTX, DOCX, TXT)
-            std::string rawText = extractTextFromFile(tmpUploadPath);
+            // Multi-format extract (PDF, PPTX, DOCX, TXT) from permanently stored file
+            std::string rawText = extractTextFromFile(storedFilePath);
 
-            // Clean up upload temp file immediately
-            std::error_code ec;
-            fs::remove(tmpUploadPath, ec);
+            // Execute Python ML Document Intelligence (scikit-learn TF-IDF + TextRank)
+            std::cout << "[PIPELINE] Invoking Python ML document processor...\n";
+            json mlInsights = runPythonML(rawText, subject, level);
 
             // Build revision notes
+            std::cout << "[PIPELINE] Synthesizing revision notes...\n";
             std::string notes = buildNotes(rawText, subject, promptTemplate, level);
 
             // Cache notes for one-click downloads
@@ -253,18 +279,90 @@ int main() {
                 {"id", uniqueId},
                 {"subject", subject},
                 {"level", level},
+                {"stored_file", {
+                    {"id", uniqueId},
+                    {"filename", safeName},
+                    {"size_bytes", file.content.size()},
+                    {"download_url", "/file?id=" + uniqueId}
+                }},
+                {"ml_insights", mlInsights},
                 {"notes", notes}
             };
             res.set_content(respJson.dump(), "application/json");
 
         } catch (const std::exception& e) {
-            std::error_code ec;
-            fs::remove(tmpUploadPath, ec);
-            std::cerr << "[ERROR] Generation failed: " << e.what() << "\n";
+            std::cerr << "[ERROR] Processing failed: " << e.what() << "\n";
             res.status = 500;
             json errJson = {{"error", e.what()}};
             res.set_content(errJson.dump(), "application/json");
         }
+    });
+
+    // GET /file?id=<id> : Retrieve the original uploaded file stored on server
+    svr.Get("/file", [&](const httplib::Request& req, httplib::Response& res) {
+        res.set_header("Access-Control-Allow-Origin", "*");
+        if (!req.has_param("id")) {
+            res.status = 400;
+            res.set_content("{\"error\":\"Missing file id parameter.\"}", "application/json");
+            return;
+        }
+
+        std::string id = req.get_param_value("id");
+        std::string foundPath = "";
+        std::string origName = "file";
+
+        for (const auto& entry : fs::directory_iterator(uploadsDir)) {
+            std::string filename = entry.path().filename().string();
+            if (filename.rfind(id + "_", 0) == 0 && entry.path().extension() != ".json") {
+                foundPath = entry.path().string();
+                origName = filename.substr(id.length() + 1);
+                break;
+            }
+        }
+
+        if (foundPath.empty() || !fs::exists(foundPath)) {
+            res.status = 404;
+            res.set_content("{\"error\":\"Stored file not found on server.\"}", "application/json");
+            return;
+        }
+
+        std::ifstream in(foundPath, std::ios::binary);
+        if (!in.is_open()) {
+            res.status = 500;
+            res.set_content("{\"error\":\"Failed to read stored file from disk.\"}", "application/json");
+            return;
+        }
+        std::stringstream ss;
+        ss << in.rdbuf();
+        std::string data = ss.str();
+
+        std::string ext = fs::path(foundPath).extension().string();
+        std::string contentType = "application/octet-stream";
+        if (ext == ".pdf") contentType = "application/pdf";
+        else if (ext == ".docx") contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        else if (ext == ".pptx") contentType = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+        else if (ext == ".txt") contentType = "text/plain";
+
+        res.set_header("Content-Disposition", "attachment; filename=\"" + origName + "\"");
+        res.set_content(data, contentType);
+    });
+
+    // GET /stored-files : List all files stored on the server
+    svr.Get("/stored-files", [&](const httplib::Request&, httplib::Response& res) {
+        res.set_header("Access-Control-Allow-Origin", "*");
+        json filesList = json::array();
+        for (const auto& entry : fs::directory_iterator(uploadsDir)) {
+            if (entry.path().extension() == ".json" && entry.path().filename().string().find("_meta.json") != std::string::npos) {
+                try {
+                    std::ifstream f(entry.path());
+                    if (f.is_open()) {
+                        json meta = json::parse(f);
+                        filesList.push_back(meta);
+                    }
+                } catch (...) {}
+            }
+        }
+        res.set_content(filesList.dump(2), "application/json");
     });
 
     // GET /download?id=...&format=pdf|docx|md

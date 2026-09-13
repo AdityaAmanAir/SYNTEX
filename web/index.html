@@ -638,6 +638,149 @@
       color: #ffffff;
     }
 
+    /* Stored File Banner */
+    .stored-file-banner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 14px 20px;
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.28);
+      border-radius: var(--radius-sm);
+      margin: 16px 24px;
+      font-size: 0.84rem;
+      color: #a7f3d0;
+    }
+    .stored-file-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .stored-file-info strong {
+      color: #ffffff;
+    }
+
+    /* ML Intelligence Panel */
+    .ml-insights-panel {
+      padding: 24px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--border);
+      margin: 0 24px 20px 24px;
+    }
+    .ml-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .ml-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 4px;
+      display: block;
+    }
+    .ml-title-group h4 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .ml-engine-tag {
+      font-size: 0.72rem;
+      font-family: var(--font-mono);
+      padding: 4px 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--text-dim);
+    }
+    .ml-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .ml-stat-card {
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      text-align: center;
+    }
+    .ml-stat-value {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+      font-family: var(--font-mono);
+    }
+    .ml-stat-label {
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 4px;
+    }
+    .ml-subgroup {
+      margin-top: 18px;
+    }
+    .ml-subheading {
+      font-size: 0.76rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+    }
+    .ml-keywords-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .ml-keyword-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      font-size: 0.78rem;
+      color: var(--text);
+      transition: all 0.2s ease;
+    }
+    .ml-keyword-pill:hover {
+      background: rgba(225, 29, 72, 0.1);
+      border-color: rgba(225, 29, 72, 0.3);
+      color: #fda4af;
+    }
+    .ml-keyword-score {
+      font-size: 0.68rem;
+      font-family: var(--font-mono);
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .ml-summary-box {
+      padding: 14px 18px;
+      background: rgba(0, 0, 0, 0.25);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: var(--text);
+    }
+    .ml-summary-sentence {
+      margin-bottom: 8px;
+    }
+    .ml-summary-sentence:last-child {
+      margin-bottom: 0;
+    }
+
     .notes-document-viewer {
       background: rgba(10, 10, 14, 0.85);
       backdrop-filter: blur(28px);
@@ -942,6 +1085,61 @@
         </div>
       </div>
 
+      <!-- Stored File Banner -->
+      <div class="stored-file-banner" id="storedFileBanner" style="display:none;">
+        <div class="stored-file-info">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Stored on Server: <strong id="storedFileName">document.pdf</strong> (<span id="storedFileSize">0 KB</span>)</span>
+        </div>
+        <a class="btn-glass-export" id="downloadSourceBtn" href="#" download>
+          <span>Download Stored Source</span>
+        </a>
+      </div>
+
+      <!-- Python ML Document Intelligence Panel -->
+      <div class="ml-insights-panel" id="mlInsightsPanel" style="display:none;">
+        <div class="ml-panel-header">
+          <div class="ml-title-group">
+            <span class="ml-badge">Python ML Engine</span>
+            <h4>Document Intelligence & Semantic Extraction</h4>
+          </div>
+          <span class="ml-engine-tag" id="mlEngineTag">scikit-learn (TF-IDF + TextRank)</span>
+        </div>
+
+        <div class="ml-stats-grid">
+          <div class="ml-stat-card">
+            <div class="ml-stat-value" id="mlWordCount">0</div>
+            <div class="ml-stat-label">Word Count</div>
+          </div>
+          <div class="ml-stat-card">
+            <div class="ml-stat-value" id="mlSentenceCount">0</div>
+            <div class="ml-stat-label">Sentences</div>
+          </div>
+          <div class="ml-stat-card">
+            <div class="ml-stat-value" id="mlLexicalDiversity">0%</div>
+            <div class="ml-stat-label">Lexical Diversity</div>
+          </div>
+          <div class="ml-stat-card">
+            <div class="ml-stat-value" id="mlStudyTime">0m</div>
+            <div class="ml-stat-label">Est. Study Time</div>
+          </div>
+        </div>
+
+        <div class="ml-subgroup" id="mlKeywordsGroup">
+          <div class="ml-subheading">Key Concepts & Terminology (Ranked by TF-IDF Relevance)</div>
+          <div class="ml-keywords-wrap" id="mlKeywordsWrap"></div>
+        </div>
+
+        <div class="ml-subgroup" id="mlExtractiveSummaryGroup" style="display:none;">
+          <div class="ml-subheading">ML Extractive Summary (Cosine Centrality Sentences)</div>
+          <div class="ml-summary-box" id="mlSummaryBox"></div>
+        </div>
+      </div>
+
       <article class="notes-document-viewer" id="notesViewer"></article>
     </section>
 
@@ -995,6 +1193,16 @@
     let activeNoteId = null;
     let activeNotesContent = "";
     let activeSubjectSlug = "Revision_Notes";
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
 
     const fileInput = document.getElementById('fileInput');
     const fileMeta = document.getElementById('fileMeta');
@@ -1143,13 +1351,69 @@
         activeNoteId = data.id;
         activeNotesContent = data.notes;
 
+        // Render Stored File Banner
+        const storedBanner = document.getElementById('storedFileBanner');
+        const storedName = document.getElementById('storedFileName');
+        const storedSize = document.getElementById('storedFileSize');
+        const downloadSourceBtn = document.getElementById('downloadSourceBtn');
+        if (data.stored_file) {
+          storedName.textContent = data.stored_file.filename || "Uploaded File";
+          const kb = Math.round((data.stored_file.size_bytes || 0) / 1024);
+          storedSize.textContent = `${kb > 0 ? kb : '< 1'} KB`;
+          downloadSourceBtn.href = data.stored_file.download_url || `/file?id=${data.id}`;
+          storedBanner.style.display = 'flex';
+        } else {
+          storedBanner.style.display = 'none';
+        }
+
+        // Render Python Scikit-Learn ML Insights
+        const mlPanel = document.getElementById('mlInsightsPanel');
+        if (data.ml_insights && data.ml_insights.status === 'success') {
+          const ml = data.ml_insights;
+          const stats = ml.stats || {};
+          document.getElementById('mlWordCount').textContent = stats.total_words ? Number(stats.total_words).toLocaleString() : '—';
+          document.getElementById('mlSentenceCount').textContent = stats.sentence_count || '—';
+          document.getElementById('mlLexicalDiversity').textContent = stats.lexical_diversity ? `${Math.round(stats.lexical_diversity * 100)}%` : '—';
+          document.getElementById('mlStudyTime').textContent = stats.est_study_minutes ? `${stats.est_study_minutes}m` : '—';
+          document.getElementById('mlEngineTag').textContent = ml.engine || "scikit-learn (TF-IDF)";
+
+          // Keywords
+          const kwWrap = document.getElementById('mlKeywordsWrap');
+          kwWrap.innerHTML = '';
+          if (Array.isArray(ml.top_keywords) && ml.top_keywords.length > 0) {
+            ml.top_keywords.forEach(k => {
+              const pill = document.createElement('div');
+              pill.className = 'ml-keyword-pill';
+              pill.innerHTML = `<span>${escapeHtml(k.term)}</span><span class="ml-keyword-score">${k.relevance_pct}%</span>`;
+              kwWrap.appendChild(pill);
+            });
+            document.getElementById('mlKeywordsGroup').style.display = 'block';
+          } else {
+            document.getElementById('mlKeywordsGroup').style.display = 'none';
+          }
+
+          // Extractive Summary
+          const sumBox = document.getElementById('mlSummaryBox');
+          const sumGroup = document.getElementById('mlExtractiveSummaryGroup');
+          if (Array.isArray(ml.extractive_summary) && ml.extractive_summary.length > 0) {
+            sumBox.innerHTML = ml.extractive_summary.map(s => `<div class="ml-summary-sentence">• ${escapeHtml(s)}</div>`).join('');
+            sumGroup.style.display = 'block';
+          } else {
+            sumGroup.style.display = 'none';
+          }
+
+          mlPanel.style.display = 'block';
+        } else {
+          mlPanel.style.display = 'none';
+        }
+
         if (window.marked) {
           notesViewer.innerHTML = marked.parse(data.notes);
         } else {
           notesViewer.textContent = data.notes;
         }
 
-        resultsMeta.textContent = `Discipline: ${data.subject} | Rigor: ${data.level} | Identifier: ${data.id}`;
+        resultsMeta.textContent = `Discipline: ${data.subject} | Rigor: ${data.level} | Stored ID: ${data.id}`;
         resultsSection.style.display = 'block';
         resultsSection.scrollIntoView({ behavior: 'smooth' });
 
