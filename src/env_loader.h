@@ -5,13 +5,18 @@
 #include <iostream>
 
 inline void loadEnvFile(const std::string& path = ".env") {
-    std::ifstream file(path);
+    std::string actualPath = path;
+    std::ifstream file(actualPath);
+    if (!file.is_open()) {
+        actualPath = "../" + path;
+        file.open(actualPath);
+    }
     if (!file.is_open()) {
         std::cout << "[CONFIG] No " << path << " file found. Using environment defaults.\n";
         return;
     }
 
-    std::cout << "[CONFIG] Loading environment configuration from " << path << "...\n";
+    std::cout << "[CONFIG] Loading environment configuration from " << actualPath << "...\n";
     std::string line;
     while (std::getline(file, line)) {
         // Strip carriage returns and leading spaces

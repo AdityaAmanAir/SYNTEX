@@ -109,7 +109,11 @@ int main() {
         return new httplib::ThreadPool(threadCount);
     };
 
-    std::string promptTemplate = loadFile("prompts/notes_prompt.txt");
+    std::string promptPath = "prompts/notes_prompt.txt";
+    if (!fs::exists(promptPath) && fs::exists("../prompts/notes_prompt.txt")) {
+        promptPath = "../prompts/notes_prompt.txt";
+    }
+    std::string promptTemplate = loadFile(promptPath);
 
     // Configurable max upload payload (default 25MB)
     int maxUploadMb = 25;
@@ -120,7 +124,11 @@ int main() {
     svr.set_payload_max_length(maxUploadMb * 1024 * 1024);
 
     // Serve frontend static files
-    svr.set_mount_point("/", "./web");
+    std::string webDir = "./web";
+    if (!fs::exists(webDir) && fs::exists("../web")) {
+        webDir = "../web";
+    }
+    svr.set_mount_point("/", webDir);
 
     // Health check endpoint
     svr.Get("/health", [](const httplib::Request&, httplib::Response& res) {
