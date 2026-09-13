@@ -164,13 +164,14 @@ int main() {
     svr.Post("/generate", [&](const httplib::Request& req, httplib::Response& res) {
         res.set_header("Access-Control-Allow-Origin", "*");
 
-        if (!req.has_file("lecture")) {
+        auto fileIt = req.files.find("lecture");
+        if (fileIt == req.files.end()) {
             res.status = 400;
             res.set_content("{\"error\":\"No lecture file uploaded. Please attach a PDF, DOCX, or PPTX.\"}", "application/json");
             return;
         }
 
-        auto file = req.get_file_value("lecture");
+        const auto& file = fileIt->second;
         if (file.content.empty()) {
             res.status = 400;
             res.set_content("{\"error\":\"Uploaded file is empty.\"}", "application/json");
@@ -180,15 +181,21 @@ int main() {
         std::string subject = "Computer Science";
         if (req.has_param("subject")) {
             subject = req.get_param_value("subject");
-        } else if (req.has_file("subject")) {
-            subject = req.get_file_value("subject").content;
+        } else {
+            auto subIt = req.files.find("subject");
+            if (subIt != req.files.end()) {
+                subject = subIt->second.content;
+            }
         }
 
         std::string level = "Undergraduate";
         if (req.has_param("level")) {
             level = req.get_param_value("level");
-        } else if (req.has_file("level")) {
-            level = req.get_file_value("level").content;
+        } else {
+            auto lvlIt = req.files.find("level");
+            if (lvlIt != req.files.end()) {
+                level = lvlIt->second.content;
+            }
         }
 
         // Determine extension from original filename

@@ -14,7 +14,7 @@ add_executable(server
     src/notes_builder.cpp
 )
 
-target_include_directories(server PRIVATE include)
+target_include_directories(server BEFORE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(server PRIVATE CURL::libcurl pthread)
 
 # Standalone CLI test utility for local end-to-end verification
@@ -24,5 +24,5 @@ add_executable(cli_test
     src/llm_client.cpp
     src/notes_builder.cpp
 )
-target_include_directories(cli_test PRIVATE include)
+target_include_directories(cli_test BEFORE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(cli_test PRIVATE CURL::libcurl pthread)
