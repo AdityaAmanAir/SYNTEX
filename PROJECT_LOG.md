@@ -65,6 +65,17 @@ _(so nobody burns an hour retrying something already ruled out)_
 ## 7. Session Log
 _(append only — newest entry at the top)_
 
+### 2026-09-13 13:22 UTC — Antigravity AI
+- **Changed:**
+  - Redesigned [web/index.html](file:///home/aditya-aman/promptwar/web/index.html) with an Apple-inspired Liquid Glass aesthetic (`backdrop-filter: blur(28px) saturate(180%)`, specular light edges, atmospheric radial mesh gradients).
+  - Added a monumental hero section with metallic gradient typography and a 4-card Bento architectural spec strip (`01 / Concurrency`, `02 / Ingestion`, `03 / Synthesis`, `04 / Publishing`).
+  - Added a sticky frosted glass navigation bar with brand monogram and live status beacon.
+  - Added an extensive 4-column academic engineering footer (Core Subsystems, Ingestion Specs, Synthesis Models, Deployment & EC2 Infrastructure).
+  - Removed all `translateY` hover-floating animations (replaced with smooth specular border lighting and color shifts).
+  - Maintained 100% emoji-free design (clean stroke SVG vectors and typographic glyphs only).
+- **Why:** Fulfill user request for hero section, footer, liquid glass trending design, and smooth non-floating animations with zero emojis.
+- **Result:** Beautiful, production-grade interface ready on port 80/8080.
+
 ### 2026-09-13 12:36 UTC — Antigravity AI
 - **Changed:**
   - Configured default port to `80` in [.env](file:///home/aditya-aman/promptwar/.env) and [src/main.cpp](file:///home/aditya-aman/promptwar/src/main.cpp), with automatic fallback to port `8080` if elevated permissions (`CAP_NET_BIND_SERVICE`) are not yet granted.
