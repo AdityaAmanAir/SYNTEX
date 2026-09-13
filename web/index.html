@@ -1259,6 +1259,11 @@
           statusLabel.textContent = 'Testing Engine';
           footerDiagnostic.textContent = 'Local Extractive Synthesis (No API key needed)';
           concurrencyBadge.textContent = 'Concurrency: 16 Worker Threads';
+        } else if (data.provider === 'Groq') {
+          statusBeacon.className = 'status-beacon active';
+          statusLabel.textContent = 'Groq AI Active';
+          footerDiagnostic.textContent = `Groq Ultra-Fast Inference (${data.model})`;
+          concurrencyBadge.textContent = 'Concurrency: Parallel Groq Inference Active';
         } else {
           statusBeacon.className = 'status-beacon active';
           statusLabel.textContent = 'Claude AI Connected';

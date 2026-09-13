@@ -65,6 +65,23 @@ _(so nobody burns an hour retrying something already ruled out)_
 ## 7. Session Log
 _(append only — newest entry at the top)_
 
+### 2026-09-13 15:02 UTC — Antigravity AI
+- **Changed:**
+  - Integrated Groq Ultra-Fast Inference LLM Client ([src/llm_client.cpp](file:///home/aditya-aman/promptwar/src/llm_client.cpp), [src/llm_client.h](file:///home/aditya-aman/promptwar/src/llm_client.h)):
+    - Primary model: `openai/gpt-oss-120b` on Groq (8,000 tokens/min limit, high-capacity pedagogical reasoning, sub-3s latency).
+    - Automatic secondary failover to `openai/gpt-oss-20b` upon rate limiting.
+    - Graceful fallback to document-aware extractive synthesizer if network or keys fail.
+    - Full multi-provider support hierarchy: Groq -> Anthropic Claude -> Local Extractive Fallback.
+  - Configured `GROQ_API_KEY` and `GROQ_MODEL` in [.env](file:///home/aditya-aman/promptwar/.env) and [.env.example](file:///home/aditya-aman/promptwar/.env.example).
+  - Updated `/health` and `/config` endpoints in [src/main.cpp](file:///home/aditya-aman/promptwar/src/main.cpp) to dynamically expose active provider and model telemetry.
+  - Updated Liquid Glass frontend ([web/index.html](file:///home/aditya-aman/promptwar/web/index.html)) to display live `Groq AI Active` beacon and provider telemetry in header and footer.
+  - Verified single end-to-end flow: **Lecture PDF → revision notes** with:
+    - **Multi-format support** (PDF via pdftotext, DOCX and PPTX via LibreOffice, TXT).
+    - **Export formats** (PDF, Word DOCX, Markdown .md with 1-click download).
+    - **Light personalization** (Subject discipline and Academic Level dropdowns steering prompt context and LLM generation).
+- **Why:** Fulfill user request to integrate Groq API key and complete the Lecture PDF → Revision Notes flow end-to-end with all bonus criteria (multi-format input, multi-format export, personalization).
+- **Result:** Sub-3-second end-to-end generation verified on PDF and DOCX, all export routes verified with HTTP 200.
+
 ### 2026-09-13 14:45 UTC — Antigravity AI
 - **Changed:**
   - Added persistent server storage for uploaded files in `uploads/` with unique identifier hashing, JSON metadata tracking (`_meta.json`), and dedicated retrieval endpoints:

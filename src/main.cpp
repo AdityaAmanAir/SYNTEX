@@ -1,6 +1,7 @@
 #include "httplib.h"
 #include "pdf_extract.h"
 #include "notes_builder.h"
+#include "llm_client.h"
 #include "env_loader.h"
 #include "ml_bridge.h"
 #include <nlohmann/json.hpp>
@@ -140,16 +141,15 @@ int main() {
 
     // Health check endpoint
     svr.Get("/health", [](const httplib::Request&, httplib::Response& res) {
-        const char* apiKey = std::getenv("ANTHROPIC_API_KEY");
-        const char* mockEnv = std::getenv("MOCK_LLM");
-        bool isMock = (mockEnv && (std::string(mockEnv) == "1" || std::string(mockEnv) == "true")) ||
-                      (!apiKey || std::string(apiKey).empty() ||
-                       std::string(apiKey).find("your-") != std::string::npos ||
-                       std::string(apiKey).find("your_key") != std::string::npos);
+        bool isMock = isLocalTestingMode();
+        std::string provider = getActiveLLMProvider();
+        std::string model = getActiveLLMModel();
 
         json h = {
             {"status", "healthy"},
             {"service", "ai-student-workspace"},
+            {"provider", provider},
+            {"model", model},
             {"testing_mode", isMock}
         };
         res.set_content(h.dump(), "application/json");
@@ -158,18 +158,13 @@ int main() {
     // Configuration / status endpoint for frontend badge & settings
     svr.Get("/config", [](const httplib::Request&, httplib::Response& res) {
         res.set_header("Access-Control-Allow-Origin", "*");
-        const char* apiKey = std::getenv("ANTHROPIC_API_KEY");
-        const char* mockEnv = std::getenv("MOCK_LLM");
-        bool isMock = (mockEnv && (std::string(mockEnv) == "1" || std::string(mockEnv) == "true")) ||
-                      (!apiKey || std::string(apiKey).empty() ||
-                       std::string(apiKey).find("your-") != std::string::npos ||
-                       std::string(apiKey).find("your_key") != std::string::npos);
-
-        const char* modelEnv = std::getenv("ANTHROPIC_MODEL");
-        std::string model = (modelEnv && *modelEnv) ? modelEnv : "claude-3-5-sonnet-20241022";
+        bool isMock = isLocalTestingMode();
+        std::string provider = getActiveLLMProvider();
+        std::string model = getActiveLLMModel();
 
         json cfg = {
             {"testing_mode", isMock},
+            {"provider", provider},
             {"model", model},
             {"has_api_key", !isMock}
         };
@@ -507,22 +502,16 @@ int main() {
         }
     }
 
-    const char* apiKey = std::getenv("ANTHROPIC_API_KEY");
-    const char* mockEnv = std::getenv("MOCK_LLM");
-    bool isMock = (mockEnv && (std::string(mockEnv) == "1" || std::string(mockEnv) == "true")) ||
-                  (!apiKey || std::string(apiKey).empty() ||
-                   std::string(apiKey).find("your-") != std::string::npos ||
-                   std::string(apiKey).find("your_key") != std::string::npos);
-
-    const char* modelEnv = std::getenv("ANTHROPIC_MODEL");
-    std::string model = (modelEnv && *modelEnv) ? modelEnv : "claude-3-5-sonnet-20241022";
+    bool isMock = isLocalTestingMode();
+    std::string provider = getActiveLLMProvider();
+    std::string model = getActiveLLMModel();
 
     std::cout << "=================================================\n";
     std::cout << "  AI-Powered Student Workspace Backend (C++17)   \n";
     std::cout << "  Concurrency: " << threadCount << " worker threads (" << hardwareThreads << " CPU cores detected)\n";
     std::cout << "  Target Port: " << port << " | Host: " << host << "\n";
-    std::cout << "  Mode: " << (isMock ? "Local Testing Mode (Zero-cost extractive synthesis)" : "Production Mode (Claude API connected)") << "\n";
-    if (!isMock) std::cout << "  Model: " << model << "\n";
+    std::cout << "  Provider: " << provider << " (" << model << ")\n";
+    std::cout << "  Mode: " << (isMock ? "Local Testing Mode (Zero-cost extractive synthesis)" : ("Production Mode (" + provider + " connected)")) << "\n";
     std::cout << "  Export formats: Markdown (.md), PDF (.pdf), Word (.docx)\n";
     std::cout << "  Input formats: PDF, DOCX, PPTX, TXT, MD\n";
     std::cout << "=================================================\n";

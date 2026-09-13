@@ -9,6 +9,7 @@
 #include <vector>
 #include <regex>
 #include <algorithm>
+#include <chrono>
 
 using json = nlohmann::json;
 
@@ -80,20 +81,17 @@ static std::string generateIntelligentTestNotes(const std::string& prompt) {
     std::smatch match;
 
     for (const auto& para : paragraphs) {
-        // Look for definitions
         std::string searchStr = para;
         while (std::regex_search(searchStr, match, defRegex)) {
             if (definitions.size() < 6) {
                 std::string term = match[1].str();
                 std::string def = match[2].str();
-                // Clean term
                 term.erase(term.find_last_not_of(" \t") + 1);
                 definitions.push_back({term, def});
             }
             searchStr = match.suffix().str();
         }
 
-        // Add interesting sentences as bullet points
         if (para.length() > 40 && bulletPoints.size() < 8) {
             size_t firstDot = para.find(". ");
             if (firstDot != std::string::npos && firstDot < 250) {
@@ -104,7 +102,6 @@ static std::string generateIntelligentTestNotes(const std::string& prompt) {
         }
     }
 
-    // Default fallbacks if regex yielded few items
     if (definitions.empty()) {
         definitions.push_back({subject + " Core Model", "The primary conceptual framework described in the lecture material."});
         definitions.push_back({"System Constraints", "The operational boundaries and invariant rules governing execution."});
@@ -116,9 +113,8 @@ static std::string generateIntelligentTestNotes(const std::string& prompt) {
         bulletPoints.push_back("Highlights critical verification boundaries and runtime fault tolerance requirements.");
     }
 
-    // Build structured exam revision notes
     std::stringstream out;
-    out << "> **System Notice**: Synthesized in Local Testing Mode (Extractive Model). Set ANTHROPIC_API_KEY in .env to engage Claude.\n\n";
+    out << "> **System Notice**: Synthesized in Local Testing Mode (Extractive Model). Set GROQ_API_KEY in .env to engage Groq.\n\n";
 
     out << "## 1. Core Principles & Foundational Architecture\n\n";
     out << "* **Discipline Context**: Exam review notes for **" << subject << "** (Academic Level: **" << level << "**).\n";
@@ -148,31 +144,88 @@ static std::string generateIntelligentTestNotes(const std::string& prompt) {
     return out.str();
 }
 
-std::string callClaude(const std::string& prompt) {
-    const char* apiKey = std::getenv("ANTHROPIC_API_KEY");
-    const char* mockEnv = std::getenv("MOCK_LLM");
-    const char* demoEnv = std::getenv("DEMO_MODE");
-
-    bool mockRequested = (mockEnv && (std::string(mockEnv) == "1" || std::string(mockEnv) == "true")) ||
-                         (demoEnv && (std::string(demoEnv) == "1" || std::string(demoEnv) == "true"));
-
-    // If no API key is provided, or is empty / default placeholder, run in test mode automatically
-    bool keyMissing = (!apiKey || std::string(apiKey).empty() ||
-                       std::string(apiKey).find("your-") != std::string::npos ||
-                       std::string(apiKey).find("your_key") != std::string::npos);
-
-    if (mockRequested || keyMissing) {
-        std::cout << "[TEST MODE] Running intelligent extractive note generator (Testing mode active)\n";
-        return generateIntelligentTestNotes(prompt);
-    }
-
+static std::string callGroq(const std::string& prompt, const std::string& apiKey, const std::string& model) {
     CURL* curl = curl_easy_init();
     if (!curl) {
-        throw std::runtime_error("curl_easy_init failed");
+        throw std::runtime_error("curl_easy_init failed for Groq API");
     }
 
-    const char* modelEnv = std::getenv("ANTHROPIC_MODEL");
-    std::string model = (modelEnv && *modelEnv) ? modelEnv : "claude-3-5-sonnet-20241022";
+    json body = {
+        {"model", model},
+        {"messages", {
+            {{"role", "system"}, {"content", "You are an expert academic tutor and university professor creating concise, rigorous, high-yield revision notes from lecture material. Respond directly in clean Markdown format with ## topic headers, bullet points, bold key terms, ## Key Definitions, and ## 3 Likely Exam Questions."}},
+            {{"role", "user"}, {"content", prompt}}
+        }},
+        {"temperature", 0.2},
+        {"max_tokens", 1500}
+    };
+
+    std::string bodyStr = body.dump();
+    std::string response;
+
+    struct curl_slist* headers = nullptr;
+    headers = curl_slist_append(headers, ("Authorization: Bearer " + apiKey).c_str());
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+
+    curl_easy_setopt(curl, CURLOPT_URL, "https://api.groq.com/openai/v1/chat/completions");
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, bodyStr.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L);
+
+    auto start = std::chrono::steady_clock::now();
+    CURLcode res = curl_easy_perform(curl);
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
+
+    long httpCode = 0;
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
+
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
+
+    if (res != CURLE_OK) {
+        throw std::runtime_error(std::string("Groq API network failure: ") + curl_easy_strerror(res));
+    }
+
+    json parsed;
+    try {
+        parsed = json::parse(response);
+    } catch (const std::exception& e) {
+        throw std::runtime_error("Failed to parse Groq response as JSON: " + response);
+    }
+
+    if (httpCode != 200) {
+        std::string err = "Groq HTTP " + std::to_string(httpCode);
+        if (parsed.contains("error") && parsed["error"].is_object() && parsed["error"].contains("message")) {
+            err += ": " + parsed["error"]["message"].get<std::string>();
+        }
+        throw std::runtime_error(err);
+    }
+
+    if (!parsed.contains("choices") || !parsed["choices"].is_array() || parsed["choices"].empty()) {
+        throw std::runtime_error("Groq response missing 'choices' array");
+    }
+
+    auto msg = parsed["choices"][0].value("message", json::object());
+    std::string content = msg.value("content", "");
+    if (content.empty() && msg.contains("reasoning")) {
+        content = msg.value("reasoning", "");
+    }
+
+    if (content.empty()) {
+        throw std::runtime_error("Groq response returned empty message content");
+    }
+
+    std::cout << "[GROQ] Inference completed successfully via " << model << " (" << elapsed << "ms)\n";
+    return content;
+}
+
+static std::string callAnthropic(const std::string& prompt, const std::string& apiKey, const std::string& model) {
+    CURL* curl = curl_easy_init();
+    if (!curl) {
+        throw std::runtime_error("curl_easy_init failed for Anthropic");
+    }
 
     json body = {
         {"model", model},
@@ -184,7 +237,7 @@ std::string callClaude(const std::string& prompt) {
     std::string response;
 
     struct curl_slist* headers = nullptr;
-    headers = curl_slist_append(headers, ("x-api-key: " + std::string(apiKey)).c_str());
+    headers = curl_slist_append(headers, ("x-api-key: " + apiKey).c_str());
     headers = curl_slist_append(headers, "anthropic-version: 2023-06-01");
     headers = curl_slist_append(headers, "content-type: application/json");
 
@@ -195,7 +248,9 @@ std::string callClaude(const std::string& prompt) {
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
     curl_easy_setopt(curl, CURLOPT_TIMEOUT, 90L);
 
+    auto start = std::chrono::steady_clock::now();
     CURLcode res = curl_easy_perform(curl);
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
 
     long httpCode = 0;
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
@@ -227,5 +282,99 @@ std::string callClaude(const std::string& prompt) {
         throw std::runtime_error("Anthropic API response missing 'content[0].text' field");
     }
 
+    std::cout << "[ANTHROPIC] Inference completed via " << model << " (" << elapsed << "ms)\n";
     return parsed["content"][0]["text"].get<std::string>();
+}
+
+bool isLocalTestingMode() {
+    const char* mockEnv = std::getenv("MOCK_LLM");
+    if (mockEnv && (std::string(mockEnv) == "1" || std::string(mockEnv) == "true")) return true;
+
+    const char* groqKey = std::getenv("GROQ_API_KEY");
+    if (groqKey && *groqKey && std::string(groqKey).find("your-") == std::string::npos && std::string(groqKey).find("your_key") == std::string::npos) {
+        return false;
+    }
+
+    const char* anthropicKey = std::getenv("ANTHROPIC_API_KEY");
+    if (anthropicKey && *anthropicKey && std::string(anthropicKey).find("your-") == std::string::npos && std::string(anthropicKey).find("your_key") == std::string::npos) {
+        return false;
+    }
+
+    return true;
+}
+
+std::string getActiveLLMProvider() {
+    if (isLocalTestingMode()) return "Testing Engine";
+
+    const char* groqKey = std::getenv("GROQ_API_KEY");
+    if (groqKey && *groqKey && std::string(groqKey).find("your-") == std::string::npos && std::string(groqKey).find("your_key") == std::string::npos) {
+        return "Groq";
+    }
+
+    const char* anthropicKey = std::getenv("ANTHROPIC_API_KEY");
+    if (anthropicKey && *anthropicKey && std::string(anthropicKey).find("your-") == std::string::npos && std::string(anthropicKey).find("your_key") == std::string::npos) {
+        return "Claude";
+    }
+
+    return "Testing Engine";
+}
+
+std::string getActiveLLMModel() {
+    if (isLocalTestingMode()) return "Extractive Model";
+
+    const char* groqKey = std::getenv("GROQ_API_KEY");
+    if (groqKey && *groqKey && std::string(groqKey).find("your-") == std::string::npos && std::string(groqKey).find("your_key") == std::string::npos) {
+        const char* m = std::getenv("GROQ_MODEL");
+        return (m && *m) ? m : "openai/gpt-oss-120b";
+    }
+
+    const char* anthropicKey = std::getenv("ANTHROPIC_API_KEY");
+    if (anthropicKey && *anthropicKey && std::string(anthropicKey).find("your-") == std::string::npos && std::string(anthropicKey).find("your_key") == std::string::npos) {
+        const char* m = std::getenv("ANTHROPIC_MODEL");
+        return (m && *m) ? m : "claude-3-5-sonnet-20241022";
+    }
+
+    return "Extractive Model";
+}
+
+std::string callLLM(const std::string& prompt) {
+    if (isLocalTestingMode()) {
+        std::cout << "[TEST MODE] Running intelligent extractive note generator (Testing mode active)\n";
+        return generateIntelligentTestNotes(prompt);
+    }
+
+    // 1. Try Groq if key is available
+    const char* groqKey = std::getenv("GROQ_API_KEY");
+    if (groqKey && *groqKey && std::string(groqKey).find("your-") == std::string::npos && std::string(groqKey).find("your_key") == std::string::npos) {
+        std::string model = getActiveLLMModel();
+        try {
+            return callGroq(prompt, groqKey, model);
+        } catch (const std::exception& e) {
+            std::cerr << "[WARN] Groq model " << model << " failed: " << e.what() << "\n";
+            if (model != "openai/gpt-oss-20b") {
+                try {
+                    std::cout << "[GROQ] Retrying with high-limit model openai/gpt-oss-20b...\n";
+                    return callGroq(prompt, groqKey, "openai/gpt-oss-20b");
+                } catch (const std::exception& e2) {
+                    std::cerr << "[WARN] Groq fallback model failed: " << e2.what() << "\n";
+                }
+            }
+            std::cerr << "[FALLBACK] Falling back to intelligent local synthesizer...\n";
+            return generateIntelligentTestNotes(prompt);
+        }
+    }
+
+    // 2. Try Anthropic if key is available
+    const char* anthropicKey = std::getenv("ANTHROPIC_API_KEY");
+    if (anthropicKey && *anthropicKey && std::string(anthropicKey).find("your-") == std::string::npos && std::string(anthropicKey).find("your_key") == std::string::npos) {
+        std::string model = getActiveLLMModel();
+        try {
+            return callAnthropic(prompt, anthropicKey, model);
+        } catch (const std::exception& e) {
+            std::cerr << "[WARN] Anthropic API call failed: " << e.what() << ". Falling back to local synthesizer...\n";
+            return generateIntelligentTestNotes(prompt);
+        }
+    }
+
+    return generateIntelligentTestNotes(prompt);
 }
