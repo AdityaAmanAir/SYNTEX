@@ -9,8 +9,8 @@
 
 The application is deployed and live for testing! You can use it right in your web browser:
 
-- **Primary URL**: **[http://adityaman.website](http://adityaman.website)**
-- **Direct IP URL**: **[http://15.252.157.8](http://15.252.157.8)** (or **[http://15.252.157.8:8080](http://15.252.157.8:8080)**)
+- **Primary URL**: **Revoked after the Event**
+- **Direct IP URL**: **Revoked after the Event** (or **Revoked after the Event**)
 
 
 
