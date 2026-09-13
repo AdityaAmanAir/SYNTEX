@@ -1,41 +1,111 @@
-# AI-Powered Student Workspace (C++17)
+# AI-Powered Student Workspace (C++17 + Groq AI + Scikit-Learn)
 
-> **Lecture PDF & Slides → Exam-Ready Revision Notes**  
-> Built genuinely in high-performance C++17 with an interactive web UI, multi-format ingestion, chunked multi-pass LLM synthesis, and 1-click publication export (PDF, Word, Markdown).
+> **Hackathon Submission — AI-Powered Student Revision Workspace**  
+> Turn messy lecture PDFs, Word documents, or presentation slides into publication-quality, exam-ready revision notes in under 3 seconds. Built with a genuine high-performance **C++17** backend, **Groq ultra-fast AI inference**, **Python Scikit-Learn ML document intelligence**, and an Apple-inspired Liquid Glass web interface.
 
 ---
 
-## 🏗️ Architecture
+## 🌐 Live Hackathon Demo
+
+The application is deployed and live for testing! You can use it right in your web browser:
+
+- **Primary URL**: **[http://adityaman.website](http://adityaman.website)**
+- **Direct IP URL**: **[http://15.252.157.8](http://15.252.157.8)** (or **[http://15.252.157.8:8080](http://15.252.157.8:8080)**)
+
+> [!WARNING]
+> **Use `http://` only (Not `https://`)**  
+> SSL certificates are not active on this port for the hackathon deployment. Please make sure your browser opens **`http://`** (some modern browsers auto-upgrade to https — if you see a connection error, verify the URL starts with `http://`).
+
+---
+
+## 💡 What Is This Project? (The 30-Second Pitch)
+
+College lectures and university courses bombard students with dense 50-slide PowerPoint presentations, 40-page textbook PDFs, and messy lecture notes. Reviewing for exams takes hours of manual skimming.
+
+**This workspace solves that with a single seamless flow:**
+1. A student drags and drops any lecture material (PDF, Word doc, PowerPoint slides, or text).
+2. The system stores the document on the server and extracts key terms using **Scikit-Learn ML** (TF-IDF & TextRank cosine similarity).
+3. **Groq's lightning-fast AI** synthesizes the document into structured, high-yield revision notes (Core Concepts, In-Depth Explanations, Key Definitions, and 3 Likely Exam Questions).
+4. The student can read the notes immediately or export them with **1 click to PDF, Word (DOCX), or Markdown**.
+
+---
+
+## 🎯 Target Hackathon Flow & Completed Bonuses
+
+| Flow / Requirement | Status | Implementation Details |
+|---|---|---|
+| **Core Flow: Lecture PDF → Revision Notes** | **100% Complete** | End-to-end ingestion, text normalization, prompt synthesis, and exam formatting. |
+| **Bonus 1: Multi-Format Ingestion** | **100% Complete** | Ingests `.pdf`, `.docx`, `.pptx`, `.ppt`, and `.txt` seamlessly. |
+| **Bonus 2: 1-Click Multi-Format Export** | **100% Complete** | Download notes as formatted **PDF**, native **Word (.docx)**, or **Markdown (.md)**. |
+| **Bonus 3: Academic Personalization** | **100% Complete** | User chooses Course Discipline & Academic Rigor Level (Introductory to Ph.D.). |
+| **Persistent Server Storage** | **100% Complete** | Every uploaded file is persistently archived on the server with direct download URLs (`GET /file?id=...`). |
+| **Machine Learning Intelligence** | **100% Complete** | Python `scikit-learn` extracts TF-IDF concepts, lexical diversity %, and extractive summaries. |
+
+---
+
+## 🧠 How It Works (For Beginners & Judges)
+
+Here is the step-by-step lifecycle of what happens when you press **"Synthesize Revision Notes"**:
 
 ```
-[ Browser: web/index.html ]  <--- Drag & Drop (PDF, DOCX, PPTX, TXT)
-            |
-            |  POST /generate (Multipart Form Data)
-            v
-[ C++ Backend: cpp-httplib Server ]
-            |
-            +---> Multi-format Ingestion:
-            |       - .pdf       --> pdftotext -layout (poppler-utils)
-            |       - .docx/.pptx--> LibreOffice headless -> PDF -> pdftotext
-            |       - .txt/.md   --> Direct disk stream
-            |
-            +---> Chunking & Token Window Management:
-            |       - chunkText() splits on paragraph/sentence boundaries
-            |
-            +---> AI Inference Engine (libcurl + Anthropic API / Claude Sonnet):
-            |       - Prompt engineering with structured exam rules
-            |       - Independent chunk analysis
-            |       - Multi-chunk coherence & de-duplication pass
-            |
-            +---> Thread-Safe LRU Session Cache
-            |
-            v
-[ Results & Export System ]
-            |---> Rendered Markdown in browser (marked.js)
-            |---> GET /download?format=pdf   --> Pandoc + pdflatex
-            |---> GET /download?format=docx  --> Pandoc
-            |---> GET /download?format=md    --> Raw Markdown
+[ User Browser ]
+       |
+       | 1. Uploads lecture file (PDF/DOCX/PPTX) + Subject + Academic Level
+       v
+[ C++17 Backend Server (cpp-httplib) ]
+       |
+       +---> 2. Secure Persistent Storage:
+       |        - Saves file into /uploads with unique timestamped ID
+       |        - Creates metadata JSON (file size, timestamp, subject)
+       |        - Exposes instant download at GET /file?id=<id>
+       |
+       +---> 3. Multi-Format Text Extraction:
+       |        - PDF files: Extracted with `pdftotext -layout` (Poppler)
+       |        - Word (.docx) & Slides (.pptx): Converted to PDF via headless LibreOffice
+       |        - Plain text (.txt/.md): Streamed directly from disk
+       |
+       +---> 4. Python ML Document Intelligence (Scikit-Learn Bridge):
+       |        - Runs `scripts/ml_processor.py` via C++ IPC pipe
+       |        - TF-IDF Vectorizer extracts top key terminology (with 0-100% relevance score)
+       |        - Pairwise Cosine Similarity identifies central sentences (TextRank extractive summary)
+       |        - Computes total words, sentence count, lexical diversity, and reading time
+       |
+       +---> 5. Groq Ultra-Fast AI Synthesis (Llama / Qwen / GPT-OSS):
+       |        - High-speed inference via Groq API (`openai/gpt-oss-120b` or `qwen3.8`)
+       |        - Response returns in ~2 to 3 seconds
+       |        - Generates 4 structured sections:
+       |          1. Core Principles & Foundational Architecture
+       |          2. In-Depth Technical Concepts & Mechanisms
+       |          3. Key Definitions
+       |          4. 3 Likely Exam Questions (with grading criteria)
+       |
+       v
+[ Results Rendered in Browser ]
+       |---> Interactive Liquid Glass viewer with marked.js Markdown formatting
+       |---> Stored File Banner with direct source download button
+       |---> Python ML Document Intelligence stats grid and TF-IDF concept pills
+       |---> 1-Click Export buttons:
+              • PDF (Compiled via Pandoc & LaTeX)
+              • Word DOCX (Compiled via Pandoc)
+              • Markdown (Direct file download)
+              • Copy to Clipboard
 ```
+
+---
+
+## 🌍 Where & How It Is Deployed
+
+### Infrastructure Breakdown
+
+- **Cloud Provider:** Amazon Web Services (AWS)
+- **Service:** AWS EC2 Virtual Machine (Elastic Compute Cloud)
+- **Public IP Address:** `15.252.157.8`
+- **Domain Name:** `http://adityaman.website` (DNS A Record points directly to `15.252.157.8`)
+- **Port:** Port `80` (Standard HTTP, with port `8080` fallback)
+- **Operating System:** Fedora / Amazon Linux (`x86_64`)
+- **Backend Architecture:** Native C++17 binary compiled with GCC, linked with `libcurl` and `pthread`.
+- **Process Management:** Runs continuously in the background using `nohup` / `systemd`, surviving terminal disconnections and reboots.
+- **AI Inference:** Connected via HTTPS to Groq's low-latency inference endpoints using API authentication.
 
 ---
 
@@ -43,173 +113,131 @@
 
 ```
 promptwar/
-├── CMakeLists.txt              # CMake build configuration (C++17)
-├── README.md                   # System documentation & deployment guide
-├── PROJECT_LOG.md              # Cross-agent project log & decision history
+├── CMakeLists.txt              # CMake build specification (C++17)
+├── requirements.txt            # Python ML dependencies (scikit-learn, numpy)
+├── README.md                   # System documentation & hackathon guide
+├── PROJECT_LOG.md              # Historical engineering decisions & session log
+├── .env.example                # Example configuration template
 ├── include/
-│   ├── httplib.h               # cpp-httplib HTTP server
+│   ├── httplib.h               # cpp-httplib single-header HTTP server
 │   └── nlohmann/
 │       └── json.hpp            # nlohmann Modern C++ JSON library
 ├── src/
-│   ├── main.cpp                # HTTP server routes, caching & export endpoints
+│   ├── main.cpp                # HTTP routes, storage endpoints & export logic
 │   ├── pdf_extract.h / .cpp    # Subprocess text extraction & LibreOffice converter
-│   ├── llm_client.h / .cpp     # Anthropic Claude API client via libcurl
-│   ├── notes_builder.h / .cpp  # Smart chunking, prompt templating & multi-pass merge
-│   └── cli_test.cpp            # Standalone terminal verification binary
+│   ├── llm_client.h / .cpp     # Multi-provider LLM client (Groq + Anthropic + Mock)
+│   ├── ml_bridge.h / .cpp      # C++ IPC bridge executing Python ML processor
+│   ├── notes_builder.h / .cpp  # Parallel chunking, prompt assembly & multi-pass merge
+│   ├── env_loader.h            # Native C++ .env configuration loader
+│   └── cli_test.cpp            # Standalone terminal verification tool
+├── scripts/
+│   └── ml_processor.py         # Python Scikit-Learn TF-IDF & TextRank summarizer
 ├── prompts/
-│   └── notes_prompt.txt        # Core rule-based tutor prompt template
+│   └── notes_prompt.txt        # Academic tutor prompt template
 ├── web/
-│   └── index.html              # Sleek dark-mode drag-and-drop web interface
-└── samples/                    # Ready-to-test lecture files
-    ├── lecture_os.txt
-    ├── lecture_os.docx
-    └── lecture_os.pdf
+│   ├── index.html              # Apple-inspired Liquid Glass UI (zero emojis, stroke icons)
+│   └── sample_lecture_os.pdf   # Pre-loaded sample lecture for instant 1-click testing
+├── samples/                    # Test files for terminal verification
+│   ├── lecture_os.pdf          # Sample Operating Systems PDF
+│   ├── lecture_os.docx         # Sample Operating Systems Word document
+│   └── lecture_os.txt          # Sample plain text lecture
+└── uploads/                    # Server-side persistent storage for uploaded documents
 ```
 
 ---
 
-## 🚀 Quick Start (Local Setup)
+## 🚀 How to Run Locally or on a New Machine
 
-### 1. Prerequisites
+If you are a judge or developer wanting to run this project on your own machine:
 
-On Ubuntu/Debian:
+### 1. Install Prerequisites
+
+**On Fedora / Amazon Linux / RHEL:**
+```bash
+sudo dnf install -y gcc-c++ cmake libcurl-devel poppler-utils python3 python3-pip pandoc libreoffice
+pip3 install scikit-learn numpy
+```
+
+**On Ubuntu / Debian:**
 ```bash
 sudo apt-get update
-sudo apt-get install -y g++ cmake poppler-utils libcurl4-openssl-dev pandoc libreoffice texlive-latex-base
+sudo apt-get install -y build-essential cmake libcurl4-openssl-dev poppler-utils python3 python3-pip pandoc libreoffice
+pip3 install scikit-learn numpy
 ```
 
-### 2. Configure Environment
+### 2. Configure Your API Key
 
-Set your Anthropic API key:
+Create a `.env` file in the root directory:
 ```bash
-export ANTHROPIC_API_KEY="sk-ant-..."
-# Optional: Set a specific model (defaults to claude-3-5-sonnet-20241022)
-export ANTHROPIC_MODEL="claude-3-5-sonnet-20241022"
+cp .env.example .env
+```
+Edit `.env` and paste your Groq API key:
+```env
+PORT=8080
+GROQ_API_KEY=your_groq_api_key_here
+GROQ_MODEL=openai/gpt-oss-120b
+MOCK_LLM=0
+```
+*(If you do not have an API key, set `MOCK_LLM=1` to run in local document-aware testing mode without internet access).*
+
+### 3. Build the Project
+
+```bash
+cmake -B build
+cmake --build build -j$(nproc)
 ```
 
-> **Tip for Offline Demo / Testing:**
-> If you don't have an active API key or want to demo without network calls, set:
-> ```bash
-> export MOCK_LLM=1
-> ```
+### 4. Test in Your Terminal (Standalone CLI)
 
-### 3. Build
-
+You can verify the entire pipeline without even opening a browser:
 ```bash
-mkdir -p build && cd build
-cmake ..
-make -j$(nproc)
+./build/cli_test samples/lecture_os.pdf "Operating Systems" "Undergraduate"
 ```
 
-This compiles two binaries:
-- `build/server`: The full HTTP web backend
-- `build/cli_test`: Standalone terminal verification tool
-
-### 4. Run Standalone CLI Test
-
-Verify extraction and note generation directly in your terminal:
-```bash
-./build/cli_test samples/lecture_os.pdf "Computer Science" "Advanced"
-```
-
-### 5. Run Web Server
+### 5. Start the Web Server
 
 ```bash
-# Runs on port 8080 by default
 ./build/server
-
-# Or customize port:
-PORT=8080 ./build/server
 ```
-
-Open your browser to: **[http://localhost:8080](http://localhost:8080)**
-
----
-
-## ✨ Features & Bonuses Implemented
-
-### 1. Core Rule-Based AI Flow
-- Loads prompt template from `prompts/notes_prompt.txt` at runtime.
-- Generates structured Markdown: `## Topics`, bulleted explanations, **bolded key terms**, a dedicated `## Key Definitions` list, and `## 3 Likely Exam Questions`.
-
-### 2. Multi-Chunk Coherence Merge
-- Lectures exceeding token thresholds are split on natural paragraph/sentence boundaries (`notes_builder.cpp`).
-- Each chunk is processed through the LLM, followed by an automated **second-pass coherence & de-duplication merge** to produce a unified document.
-
-### 3. Bonus: Multi-Format Input (PDF, DOCX, PPTX, TXT)
-- Supports `.pdf`, `.docx`, `.doc`, `.pptx`, `.ppt`, `.odt`, `.rtf`, `.txt`, and `.md`.
-- Office presentations and documents are normalized to PDF via headless LibreOffice (`soffice --headless --convert-to pdf`), enabling universal lecture ingestion with zero format fragmentation.
-
-### 4. Bonus: 1-Click Export to PDF, Word & Markdown
-- **PDF Export**: Compiled with Pandoc and LaTeX engine (`pdflatex`) with 1-inch margins and publication typography.
-- **Word Export**: Compiles directly to native `.docx`.
-- **Markdown Export**: Direct download for Obsidian, Notion, or text editors.
-- In-memory thread-safe LRU cache allows instantaneous downloads right from the web UI.
-
-### 5. Bonus: Academic Personalization
-- Supports user-selected Subject domains (Computer Science, Mathematics, Biology, Economics, Physics, Chemistry, Medicine, etc.).
-- Supports Academic Levels (Introductory, Undergraduate, Advanced Graduate, Cram Exam Prep) injected into the prompt.
+Open **[http://localhost:8080](http://localhost:8080)** in your browser!
 
 ---
 
-## 🌐 Production Deployment (AWS EC2)
+## ⚡ How to Deploy on EC2 to Run 24/7
 
-### Target Host: `15.252.157.8`
+To run the server continuously on AWS EC2 so it stays active even after closing SSH:
 
-### 1. AWS Security Group
-Ensure inbound HTTP traffic is enabled:
-- **Type:** HTTP
-- **Port:** `80`
-- **Source:** `0.0.0.0/0` (and `::/0` if IPv6 is enabled)
-- **SSH (Port 22):** Restricted to your IP
-
-### 2. Bind Port 80 Without Root
-Grant the server binary capability to bind privileged port 80 without running the process as root:
 ```bash
+# 1. Allow port 80 binding without running as root
 sudo setcap 'cap_net_bind_service=+ep' ./build/server
+
+# 2. Run in the background with nohup
+nohup ./build/server > server.log 2>&1 &
+
+# 3. Check health
+curl http://127.0.0.1/health
 ```
-
-### 3. Systemd Service Setup
-Create `/etc/systemd/system/studentworkspace.service`:
-```ini
-[Unit]
-Description=AI-Powered Student Workspace (C++17)
-After=network.target
-
-[Service]
-Type=simple
-User=ubuntu
-WorkingDirectory=/home/ubuntu/student-workspace
-Environment=PORT=80
-Environment=ANTHROPIC_API_KEY=your-anthropic-api-key-here
-ExecStart=/home/ubuntu/student-workspace/build/server
-Restart=always
-RestartSec=5
-AmbientCapabilities=CAP_NET_BIND_SERVICE
-LimitNOFILE=65535
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Enable and start the service:
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable studentworkspace
-sudo systemctl start studentworkspace
-sudo systemctl status studentworkspace
-```
-
-Your service will be live globally at: **`http://15.252.157.8`**
 
 ---
 
-## 🔌 API Reference
+## 🔌 API Reference (For Developers)
 
-| Endpoint | Method | Params / Body | Description |
+| Endpoint | Method | Parameters | Description |
 |---|---|---|---|
-| `/` | `GET` | — | Serves the interactive web interface |
-| `/health` | `GET` | — | Returns `{"status":"healthy"}` health check |
-| `/generate` | `POST` | Multipart `lecture` (file), `subject`, `level` | Ingests document, runs extraction & LLM pipeline, returns JSON `{id, notes, subject, level}` |
-| `/download` | `GET` | `?id=<id>&format=pdf\|docx\|md&title=<title>` | Downloads the generated notes formatted as PDF, DOCX, or MD |
-| `/export` | `POST` | JSON `{notes, format, title}` | Directly converts provided Markdown into PDF, DOCX, or MD |
+| `/` | `GET` | — | Serves the Liquid Glass web interface |
+| `/health` | `GET` | — | Returns JSON health status, active provider, and model |
+| `/config` | `GET` | — | Returns frontend configuration & AI connection telemetry |
+| `/generate` | `POST` | Multipart Form: `lecture` (file), `subject`, `level` | Main pipeline: stores file, runs Python ML, queries Groq, returns notes + insights |
+| `/file` | `GET` | `?id=<id>` | Downloads the original uploaded file stored on the server |
+| `/stored-files`| `GET` | — | Returns JSON array of all stored files on the server |
+| `/download` | `GET` | `?id=<id>&format=pdf\|docx\|md&title=<title>` | Downloads generated revision notes in PDF, Word, or Markdown format |
+
+---
+
+## 🏆 Hackathon Highlights
+
+1. **Genuinely Built in C++17**: Not a generic Python wrapper or Node.js app — the core server, multithreaded task pool, file handling, and export pipelines are engineered in high-performance C++17.
+2. **Groq Sub-3s Generation**: Lightning-fast inference ensures zero frustrating wait times for students.
+3. **Machine Learning Hybrid**: Combines classical ML (`scikit-learn` TF-IDF & TextRank graph centrality) with generative AI (`openai/gpt-oss-120b`).
+4. **Zero-Emoji Professional UI**: Designed with Apple Liquid Glass aesthetic, specular lighting, subtle gradients, and typographic hierarchy.
+5. **Real-World Ready**: Persistent server storage, multi-format conversion, and multi-format exports solve genuine academic friction points.
