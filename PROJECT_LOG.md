@@ -65,6 +65,19 @@ _(so nobody burns an hour retrying something already ruled out)_
 ## 7. Session Log
 _(append only — newest entry at the top)_
 
+### 2026-09-13 12:36 UTC — Antigravity AI
+- **Changed:**
+  - Configured default port to `80` in [.env](file:///home/aditya-aman/promptwar/.env) and [src/main.cpp](file:///home/aditya-aman/promptwar/src/main.cpp), with automatic fallback to port `8080` if elevated permissions (`CAP_NET_BIND_SERVICE`) are not yet granted.
+  - Implemented multi-core CPU concurrency:
+    - HTTP server configured with `ThreadPool` sized to `hardware_concurrency * 2` (configurable via `SERVER_THREADS` in `.env`).
+    - Lecture chunk processing in [src/notes_builder.cpp](file:///home/aditya-aman/promptwar/src/notes_builder.cpp) parallelized using `std::async(std::launch::async, ...)` across worker threads.
+  - Redesigned frontend in [web/index.html](file:///home/aditya-aman/promptwar/web/index.html) into an authentic Swiss International Typographic Style:
+    - Clean sans-serif hierarchy, strict asymmetric grid rhythm, high-contrast monochrome aesthetic with Swiss Red accents.
+    - Zero emojis anywhere in UI, backend logs, or generated notes.
+    - Human-like academic editorial microcopy and typography.
+- **Why:** Satisfy user request for port 80 hosting, multi-threaded CPU concurrency, and professional Swiss design with no emojis.
+- **Result:** Fully compiled, verified with parallel chunking, port 80 handling, and Swiss design UI.
+
 ### 2026-09-13 12:22 UTC — Antigravity AI
 - **Changed:**
   - Added native C++ `.env` configuration loader ([src/env_loader.h](file:///home/aditya-aman/promptwar/src/env_loader.h)) parsing `PORT`, `HOST`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `MOCK_LLM`, and upload limits.

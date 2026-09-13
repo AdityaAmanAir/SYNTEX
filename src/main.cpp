@@ -97,6 +97,18 @@ int main() {
     loadEnvFile(".env");
 
     httplib::Server svr;
+
+    // Multi-threaded task queue utilizing all hardware CPU cores
+    unsigned int hardwareThreads = std::thread::hardware_concurrency();
+    size_t threadCount = (hardwareThreads > 0) ? (hardwareThreads * 2) : 8;
+    const char* threadsEnv = std::getenv("SERVER_THREADS");
+    if (threadsEnv && *threadsEnv) {
+        try { threadCount = std::stoul(threadsEnv); } catch (...) {}
+    }
+    svr.new_task_queue = [threadCount] {
+        return new httplib::ThreadPool(threadCount);
+    };
+
     std::string promptTemplate = loadFile("prompts/notes_prompt.txt");
 
     // Configurable max upload payload (default 25MB)
@@ -372,13 +384,13 @@ int main() {
     const char* hostEnv = std::getenv("HOST");
     if (hostEnv && *hostEnv) host = hostEnv;
 
-    int port = 8080;
+    int port = 80;
     const char* portEnv = std::getenv("PORT");
     if (portEnv && *portEnv) {
         try {
             port = std::stoi(portEnv);
         } catch (...) {
-            port = 8080;
+            port = 80;
         }
     }
 
@@ -394,17 +406,33 @@ int main() {
 
     std::cout << "=================================================\n";
     std::cout << "  AI-Powered Student Workspace Backend (C++17)   \n";
-    std::cout << "  Listening on: http://" << host << ":" << port << "\n";
-    std::cout << "  Status: " << (isMock ? "🧪 Local Testing Mode (No API key needed)" : "⚡ Live Claude API Connected") << "\n";
+    std::cout << "  Concurrency: " << threadCount << " worker threads (" << hardwareThreads << " CPU cores detected)\n";
+    std::cout << "  Target Port: " << port << " | Host: " << host << "\n";
+    std::cout << "  Mode: " << (isMock ? "Local Testing Mode (Zero-cost extractive synthesis)" : "Production Mode (Claude API connected)") << "\n";
     if (!isMock) std::cout << "  Model: " << model << "\n";
     std::cout << "  Export formats: Markdown (.md), PDF (.pdf), Word (.docx)\n";
     std::cout << "  Input formats: PDF, DOCX, PPTX, TXT, MD\n";
     std::cout << "=================================================\n";
 
+    std::cout << "Binding HTTP server to " << host << ":" << port << "...\n";
     if (!svr.listen(host.c_str(), port)) {
-        std::cerr << "[ERROR] Could not bind to " << host << ":" << port
-                  << ". If using port 80, ensure CAP_NET_BIND_SERVICE or sudo is set.\n";
-        return 1;
+        if (port == 80) {
+            std::cerr << "\n[NOTICE] Direct binding to Port 80 requires elevated system privileges.\n";
+            std::cerr << "         To run directly on port 80 without root, execute:\n";
+            std::cerr << "           sudo setcap 'cap_net_bind_service=+ep' ./build/server\n";
+            std::cerr << "         Or run with sudo:\n";
+            std::cerr << "           sudo ./build/server\n\n";
+            std::cerr << "         Switching automatically to fallback development port 8080...\n\n";
+            port = 8080;
+            std::cout << "Binding HTTP server to " << host << ":" << port << "...\n";
+            if (!svr.listen(host.c_str(), port)) {
+                std::cerr << "[FATAL] Failed to bind to port " << port << "\n";
+                return 1;
+            }
+        } else {
+            std::cerr << "[FATAL] Failed to bind to " << host << ":" << port << "\n";
+            return 1;
+        }
     }
 
     return 0;

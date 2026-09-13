@@ -3,6 +3,8 @@
 #include <sstream>
 #include <stdexcept>
 #include <iostream>
+#include <future>
+#include <vector>
 
 std::vector<std::string> chunkText(const std::string& text, size_t maxChars) {
     std::vector<std::string> chunks;
@@ -68,12 +70,28 @@ std::string buildNotes(const std::string& rawText,
               << " | Chunks: " << chunks.size() << "\n";
 
     std::string combined;
-    for (size_t i = 0; i < chunks.size(); ++i) {
-        std::cout << "[INFO] Generating notes for chunk " << (i + 1) << "/" << chunks.size() << "...\n";
+    if (chunks.size() == 1) {
         std::string prompt = replaceAll(promptTemplate, "{subject}", subject);
         prompt = replaceAll(prompt, "{level}", level.empty() ? "Undergraduate" : level);
-        prompt = replaceAll(prompt, "{raw_text}", chunks[i]);
-        combined += callClaude(prompt) + "\n\n";
+        prompt = replaceAll(prompt, "{raw_text}", chunks[0]);
+        combined = callClaude(prompt);
+    } else {
+        std::cout << "[CONCURRENCY] Processing " << chunks.size() << " chunks in parallel across worker threads...\n";
+        std::vector<std::future<std::string>> futures;
+        futures.reserve(chunks.size());
+
+        for (size_t i = 0; i < chunks.size(); ++i) {
+            futures.push_back(std::async(std::launch::async, [i, chunk = chunks[i], subject, level, &promptTemplate]() {
+                std::string prompt = replaceAll(promptTemplate, "{subject}", subject);
+                prompt = replaceAll(prompt, "{level}", level.empty() ? "Undergraduate" : level);
+                prompt = replaceAll(prompt, "{raw_text}", chunk);
+                return callClaude(prompt);
+            }));
+        }
+
+        for (size_t i = 0; i < futures.size(); ++i) {
+            combined += futures[i].get() + "\n\n";
+        }
     }
 
     // Multi-chunk coherence pass

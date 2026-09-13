@@ -3,93 +3,144 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Student Workspace — Lecture to Revision Notes</title>
+  <title>Academic Revision Workspace — Lecture Synthesis System</title>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     :root {
-      --primary: #2563eb;
-      --primary-hover: #1d4ed8;
-      --bg: #0f172a;
-      --card: #1e293b;
-      --border: #334155;
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --accent: #38bdf8;
-      --success: #10b981;
-      --radius: 12px;
+      --bg: #09090b;
+      --surface: #111113;
+      --surface-raised: #18181b;
+      --surface-hover: #202024;
+      --border: #27272a;
+      --border-subtle: #1f1f23;
+      --text: #fafafa;
+      --text-muted: #a1a1aa;
+      --text-dim: #71717a;
+      --accent: #e11d48; /* Swiss Red */
+      --accent-muted: rgba(225, 29, 72, 0.12);
+      --accent-hover: #be123c;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Arial, sans-serif;
+      --font-mono: "SF Mono", "Consolas", "Monaco", monospace;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: var(--font-sans);
       background: var(--bg);
       color: var(--text);
-      line-height: 1.6;
-      padding: 32px 20px;
+      line-height: 1.5;
+      padding: 48px 24px;
+      -webkit-font-smoothing: antialiased;
     }
 
     .container {
-      max-width: 900px;
+      max-width: 960px;
       margin: 0 auto;
     }
 
-    header {
-      margin-bottom: 32px;
-      text-align: center;
+    /* Top Grid Header */
+    .header-bar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: baseline;
+      gap: 16px;
+      padding-bottom: 28px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 36px;
     }
 
-    .badge {
-      display: inline-block;
+    .brand-eyebrow {
       font-size: 0.75rem;
       font-weight: 700;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
-      padding: 4px 12px;
-      border-radius: 9999px;
-      background: rgba(56, 189, 248, 0.15);
       color: var(--accent);
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      margin-bottom: 12px;
+      margin-bottom: 8px;
+      display: block;
     }
 
     h1 {
-      font-size: 2.25rem;
-      font-weight: 800;
-      letter-spacing: -0.025em;
-      background: linear-gradient(to right, #ffffff, #94a3b8);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 8px;
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      color: var(--text);
     }
 
-    .subtitle {
+    .header-desc {
       color: var(--text-muted);
-      font-size: 1.05rem;
+      font-size: 0.95rem;
+      margin-top: 6px;
+      max-width: 620px;
     }
 
-    .card {
-      background: var(--card);
+    .status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 28px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
-      margin-bottom: 24px;
+      background: var(--surface);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--text-muted);
     }
 
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #eab308;
+    }
+
+    .status-dot.active {
+      background: #10b981;
+    }
+
+    /* Grid Layout */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      margin-bottom: 32px;
+    }
+
+    .panel-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .panel-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .panel-body {
+      padding: 24px;
+    }
+
+    /* Dropzone */
     .dropzone {
-      border: 2px dashed var(--border);
-      border-radius: var(--radius);
-      padding: 36px 20px;
+      border: 1px dashed var(--border);
+      background: var(--surface-raised);
+      padding: 44px 24px;
       text-align: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      background: rgba(15, 23, 42, 0.5);
       position: relative;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease;
     }
 
-    .dropzone.dragover, .dropzone:hover {
-      border-color: var(--accent);
-      background: rgba(56, 189, 248, 0.05);
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--text);
+      background: var(--surface-hover);
     }
 
     .dropzone input[type="file"] {
@@ -99,338 +150,419 @@
       cursor: pointer;
     }
 
-    .drop-icon {
-      font-size: 2.5rem;
-      margin-bottom: 8px;
-      display: block;
-    }
-
-    .file-info {
-      margin-top: 12px;
-      font-size: 0.95rem;
-      color: var(--accent);
+    .drop-heading {
+      font-size: 1.05rem;
       font-weight: 600;
-      display: none;
-    }
-
-    .form-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-top: 20px;
-    }
-
-    @media (max-width: 600px) {
-      .form-grid { grid-template-columns: 1fr; }
-    }
-
-    label {
-      display: block;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-    }
-
-    select, button {
-      width: 100%;
-      padding: 12px 16px;
-      border-radius: 8px;
-      font-size: 1rem;
-      transition: all 0.2s;
-    }
-
-    select {
-      background: #0f172a;
-      border: 1px solid var(--border);
       color: var(--text);
-      outline: none;
+      margin-bottom: 4px;
     }
 
-    select:focus {
-      border-color: var(--accent);
+    .drop-sub {
+      font-size: 0.8rem;
+      color: var(--text-dim);
     }
 
-    .btn-primary {
-      margin-top: 24px;
-      background: var(--primary);
-      border: none;
-      color: white;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 8px;
-      box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.4);
-    }
-
-    .btn-primary:hover:not(:disabled) {
-      background: var(--primary-hover);
-      transform: translateY(-1px);
-    }
-
-    .btn-primary:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    /* Progress & Loading */
-    .loading-box {
+    .file-meta {
+      margin-top: 16px;
       display: none;
-      text-align: center;
-      padding: 30px;
+      padding: 8px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text);
     }
 
-    .spinner {
-      display: inline-block;
-      width: 44px;
-      height: 44px;
-      border: 4px solid rgba(56, 189, 248, 0.2);
-      border-radius: 50%;
-      border-top-color: var(--accent);
-      animation: spin 0.9s linear infinite;
-      margin-bottom: 16px;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .loading-step {
-      color: var(--accent);
-      font-weight: 600;
-      font-size: 1.1rem;
-    }
-
-    /* Results section */
-    .results-card {
-      display: none;
-    }
-
-    .results-header {
+    .sample-action {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 20px;
+      margin-top: 12px;
     }
 
-    .export-group {
+    .btn-text {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 0.78rem;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0;
+      transition: color 0.15s;
+    }
+
+    .btn-text:hover {
+      color: var(--text);
+    }
+
+    /* Controls Form Grid */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 24px;
+    }
+
+    @media (max-width: 680px) {
+      .header-bar { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+
+    .control-group label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+
+    select {
+      width: 100%;
+      padding: 11px 14px;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.9rem;
+      font-family: var(--font-sans);
+      border-radius: 0;
+      outline: none;
+      transition: border-color 0.15s;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+    }
+
+    select:focus {
+      border-color: var(--text);
+    }
+
+    /* Primary Action */
+    .btn-submit {
+      width: 100%;
+      margin-top: 24px;
+      padding: 14px 20px;
+      background: var(--text);
+      color: var(--bg);
+      border: 1px solid var(--text);
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-submit:hover:not(:disabled) {
+      background: #e4e4e7;
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Processing Bar */
+    .process-panel {
+      display: none;
+      padding: 32px 24px;
+      text-align: left;
+      border-left: 2px solid var(--accent);
+      background: var(--surface-raised);
+    }
+
+    .process-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    .process-step {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .process-progress-bar {
+      height: 2px;
+      width: 100%;
+      background: var(--border);
+      margin-top: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .process-progress-val {
+      position: absolute;
+      left: -40%;
+      width: 40%;
+      height: 100%;
+      background: var(--accent);
+      animation: indeterminate 1.6s infinite cubic-bezier(0.65, 0, 0.35, 1);
+    }
+
+    @keyframes indeterminate {
+      0% { left: -40%; }
+      100% { left: 100%; }
+    }
+
+    /* Output Section */
+    .results-panel {
+      display: none;
+    }
+
+    .export-toolbar {
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
     }
 
     .btn-export {
-      padding: 8px 14px;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      background: #334155;
+      padding: 7px 14px;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
       color: var(--text);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
       cursor: pointer;
       text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      width: auto;
+      transition: background 0.15s, border-color 0.15s;
     }
 
     .btn-export:hover {
-      background: #475569;
-      color: white;
+      background: var(--surface-hover);
+      border-color: var(--text-dim);
     }
 
-    .btn-export.pdf { background: #dc2626; }
-    .btn-export.pdf:hover { background: #b91c1c; }
-    .btn-export.docx { background: #2563eb; }
-    .btn-export.docx:hover { background: #1d4ed8; }
+    .btn-export.primary {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
 
-    /* Markdown note content styling */
-    .notes-rendered {
-      background: #0f172a;
+    .btn-export.primary:hover {
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    /* Rendered Notes Typography */
+    .notes-document {
+      background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 24px;
-      color: #e2e8f0;
-      font-size: 1rem;
-      line-height: 1.7;
+      padding: 36px 32px;
+      font-size: 0.95rem;
+      line-height: 1.75;
+      color: #e4e4e7;
     }
 
-    .notes-rendered h2 {
-      color: #38bdf8;
-      margin-top: 24px;
+    .notes-document h2 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #ffffff;
+      margin-top: 28px;
       margin-bottom: 12px;
-      font-size: 1.4rem;
-      border-bottom: 1px solid #1e293b;
       padding-bottom: 6px;
+      border-bottom: 1px solid var(--border-subtle);
     }
 
-    .notes-rendered h2:first-child { margin-top: 0; }
+    .notes-document h2:first-child { margin-top: 0; }
 
-    .notes-rendered ul, .notes-rendered ol {
-      margin-left: 24px;
+    .notes-document ul, .notes-document ol {
+      margin-left: 20px;
       margin-bottom: 16px;
     }
 
-    .notes-rendered li {
+    .notes-document li {
       margin-bottom: 6px;
     }
 
-    .notes-rendered strong {
-      color: #f1f5f9;
+    .notes-document strong {
+      color: #ffffff;
+      font-weight: 600;
     }
 
-    .error-box {
+    .notes-document blockquote {
+      border-left: 2px solid var(--accent);
+      padding-left: 14px;
+      margin: 16px 0;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+    }
+
+    /* Error Notification */
+    .error-banner {
       display: none;
-      background: rgba(239, 68, 68, 0.15);
-      border: 1px solid #ef4444;
-      border-radius: 8px;
-      padding: 16px;
-      color: #fca5a5;
       margin-top: 16px;
-      font-size: 0.95rem;
+      padding: 12px 16px;
+      border: 1px solid #7f1d1d;
+      background: rgba(127, 29, 29, 0.2);
+      color: #fca5a5;
+      font-size: 0.82rem;
     }
 
     footer {
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 0.85rem;
-      margin-top: 40px;
+      margin-top: 64px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-dim);
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
     }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <header>
-    <div class="badge" id="modeBadge">🧪 Testing Mode Active (No API Key Required)</div>
-    <h1>AI-Powered Student Workspace</h1>
-    <p class="subtitle">Transform messy lecture slides & documents into clean, exam-ready revision notes</p>
+  <header class="header-bar">
+    <div>
+      <span class="brand-eyebrow">Academic Workspace</span>
+      <h1>Lecture Synthesis System</h1>
+      <p class="header-desc">
+        Deterministic transformation of lecture transcripts, presentation slides, and technical literature into structured revision syllabi.
+      </p>
+    </div>
+    <div class="status-indicator" id="statusBadge">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">System Initializing</span>
+    </div>
   </header>
 
-  <div class="card">
-    <form id="uploadForm">
-      <div class="dropzone" id="dropzone">
-        <span class="drop-icon">📄</span>
-        <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 4px;">
-          Drop your lecture file here, or <span style="color: var(--accent);">browse</span>
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Source Input Specification</span>
+      <span style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono);">PDF · DOCX · PPTX · TXT</span>
+    </div>
+    <div class="panel-body">
+      <form id="uploadForm">
+        <div class="dropzone" id="dropzone">
+          <div class="drop-heading">Select or drag lecture file</div>
+          <div class="drop-sub">Supported formats: PDF, Microsoft Word (DOCX), PowerPoint (PPTX), Plain Text (max 25 MB)</div>
+          <div class="file-meta" id="fileMeta"></div>
+          <input type="file" id="fileInput" name="lecture" accept=".pdf,.docx,.pptx,.ppt,.doc,.txt,.md">
         </div>
-        <div style="color: var(--text-muted); font-size: 0.85rem;">
-          Supported formats: PDF, DOCX, PPTX, TXT, MD (up to 25MB)
-        </div>
-        <div class="file-info" id="fileInfo"></div>
-        <input type="file" id="fileInput" name="lecture" accept=".pdf,.docx,.pptx,.ppt,.doc,.txt,.md">
-      </div>
 
-      <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
-        <button type="button" id="sampleBtn" style="background: rgba(56,189,248,0.1); border: 1px dashed var(--accent); color: var(--accent); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; width: auto;">
-          ⚡ Or Click to Load Sample CS Lecture (Instant Demo)
+        <div class="sample-action">
+          <button type="button" class="btn-text" id="sampleBtn">Load verification sample (CS 301 Architecture)</button>
+          <span style="font-size: 0.72rem; color: var(--text-dim);">Concurrency: multi-threaded parallel chunking</span>
+        </div>
+
+        <div class="form-grid">
+          <div class="control-group">
+            <label for="subjectSelect">Discipline Domain</label>
+            <select name="subject" id="subjectSelect">
+              <option value="Computer Science" selected>Computer Science & Engineering</option>
+              <option value="Mathematics">Mathematics & Formal Logic</option>
+              <option value="Physics">Physics & Applied Sciences</option>
+              <option value="Biology">Biology & Molecular Sciences</option>
+              <option value="Economics">Economics & Quantitative Finance</option>
+              <option value="Chemistry">Chemistry & Chemical Engineering</option>
+              <option value="Medicine">Medicine & Biomedical Sciences</option>
+              <option value="Law">Law & Jurisprudence</option>
+              <option value="History">History & Humanities</option>
+              <option value="General">General Academic Studies</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label for="levelSelect">Academic Rigor Level</label>
+            <select name="level" id="levelSelect">
+              <option value="Introductory">Foundational / Introductory</option>
+              <option value="Undergraduate" selected>Standard Undergraduate</option>
+              <option value="Advanced">Advanced Graduate Seminar</option>
+              <option value="Exam Prep">High-Yield Examination Synopsis</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit" id="submitBtn">
+          Synthesize Revision Notes
         </button>
-      </div>
+      </form>
 
-      <div class="form-grid">
-        <div>
-          <label for="subjectSelect">Subject Field</label>
-          <select name="subject" id="subjectSelect">
-            <option value="Computer Science" selected>Computer Science & Engineering</option>
-            <option value="Mathematics">Mathematics & Statistics</option>
-            <option value="Biology">Biology & Life Sciences</option>
-            <option value="Economics">Economics & Business</option>
-            <option value="Physics">Physics & Physical Sciences</option>
-            <option value="Chemistry">Chemistry & Materials</option>
-            <option value="History">History & Humanities</option>
-            <option value="Medicine">Medicine & Health Sciences</option>
-            <option value="General">General / Other</option>
-          </select>
-        </div>
-
-        <div>
-          <label for="levelSelect">Academic Level</label>
-          <select name="level" id="levelSelect">
-            <option value="Introductory">Introductory (Foundational)</option>
-            <option value="Undergraduate" selected>Undergraduate (Core Course)</option>
-            <option value="Advanced">Advanced (Graduate Level)</option>
-            <option value="Exam Prep">High-Yield Exam Prep (Cram Mode)</option>
-          </select>
-        </div>
-      </div>
-
-      <button type="submit" class="btn-primary" id="submitBtn">
-        <span>⚡ Generate Revision Notes</span>
-      </button>
-    </form>
-
-    <div class="error-box" id="errorBox"></div>
+      <div class="error-banner" id="errorBanner"></div>
+    </div>
   </div>
 
-  <div class="card loading-box" id="loadingBox">
-    <div class="spinner"></div>
-    <div class="loading-step" id="loadingStep">Processing document...</div>
-    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 8px;">
-      Extracting text, chunking long sections, and generating exam-focused notes with Claude
-    </p>
+  <div class="process-panel" id="processPanel">
+    <div class="process-label">Pipeline In Progress</div>
+    <div class="process-step" id="processStep">Ingesting payload...</div>
+    <div class="process-progress-bar">
+      <div class="process-progress-val"></div>
+    </div>
   </div>
 
-  <div class="card results-card" id="resultsCard">
-    <div class="results-header">
+  <div class="panel results-panel" id="resultsPanel">
+    <div class="panel-header">
       <div>
-        <h3 style="font-size: 1.25rem;" id="resultTitle">Generated Revision Notes</h3>
-        <p style="color: var(--text-muted); font-size: 0.85rem;" id="resultMeta"></p>
+        <span class="panel-title" id="resultsTitle">Revision Notes</span>
+        <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 2px;" id="resultsMeta"></div>
       </div>
-      <div class="export-group">
-        <button class="btn-export pdf" id="exportPdfBtn">📄 Download PDF</button>
-        <button class="btn-export docx" id="exportDocxBtn">📝 Download Word</button>
-        <button class="btn-export" id="exportMdBtn">📋 Download MD</button>
-        <button class="btn-export" id="copyBtn">📋 Copy Notes</button>
+      <div class="export-toolbar">
+        <button class="btn-export primary" id="exportPdfBtn">Export PDF</button>
+        <button class="btn-export" id="exportDocxBtn">Export Word</button>
+        <button class="btn-export" id="exportMdBtn">Export Markdown</button>
+        <button class="btn-export" id="copyBtn">Copy Text</button>
       </div>
     </div>
-
-    <div class="notes-rendered" id="notesContent"></div>
+    <div class="panel-body">
+      <div class="notes-document" id="notesDocument"></div>
+    </div>
   </div>
 
   <footer>
-    Built with C++17, cpp-httplib, libcurl, poppler-utils, pandoc, and Anthropic API.
+    <span>C++17 Engine &middot; cpp-httplib &middot; poppler-utils &middot; pandoc &middot; libreoffice</span>
+    <span id="footerMode">Port 80 Mode</span>
   </footer>
 </div>
 
 <script>
-  let currentNoteId = null;
-  let currentNoteContent = "";
-  let currentSubject = "Revision_Notes";
+  let activeNoteId = null;
+  let activeNotesContent = "";
+  let activeSubjectSlug = "Lecture";
 
   const fileInput = document.getElementById('fileInput');
-  const fileInfo = document.getElementById('fileInfo');
+  const fileMeta = document.getElementById('fileMeta');
   const dropzone = document.getElementById('dropzone');
-  const form = document.getElementById('uploadForm');
+  const uploadForm = document.getElementById('uploadForm');
   const submitBtn = document.getElementById('submitBtn');
-  const loadingBox = document.getElementById('loadingBox');
-  const loadingStep = document.getElementById('loadingStep');
-  const errorBox = document.getElementById('errorBox');
-  const resultsCard = document.getElementById('resultsCard');
-  const notesContent = document.getElementById('notesContent');
-  const resultMeta = document.getElementById('resultMeta');
+  const processPanel = document.getElementById('processPanel');
+  const processStep = document.getElementById('processStep');
+  const errorBanner = document.getElementById('errorBanner');
+  const resultsPanel = document.getElementById('resultsPanel');
+  const notesDocument = document.getElementById('notesDocument');
+  const resultsMeta = document.getElementById('resultsMeta');
   const copyBtn = document.getElementById('copyBtn');
+  const sampleBtn = document.getElementById('sampleBtn');
+  const statusDot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+  const footerMode = document.getElementById('footerMode');
 
-  fileInput.addEventListener('change', (e) => {
+  // File picker handler
+  fileInput.addEventListener('change', () => {
     if (fileInput.files.length > 0) {
-      const file = fileInput.files[0];
-      const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
-      fileInfo.textContent = `Selected: ${file.name} (${sizeMb} MB)`;
-      fileInfo.style.display = 'block';
+      const f = fileInput.files[0];
+      const mb = (f.size / (1024 * 1024)).toFixed(2);
+      fileMeta.textContent = `Attached: ${f.name} [${mb} MB]`;
+      fileMeta.style.display = 'block';
     } else {
-      fileInfo.style.display = 'none';
+      fileMeta.style.display = 'none';
     }
   });
 
-  // Drag & drop visual cues
+  // Drag and drop events
   ['dragenter', 'dragover'].forEach(name => {
     dropzone.addEventListener(name, (e) => {
       e.preventDefault();
@@ -444,39 +576,83 @@
     });
   });
 
-  const steps = [
-    "Uploading lecture file...",
-    "Extracting document text & layout...",
-    "Chunking and analyzing core concepts...",
-    "Querying Claude AI for revision notes...",
-    "Synthesizing key definitions and exam questions..."
+  // Config check
+  async function syncConfiguration() {
+    try {
+      const res = await fetch('/config');
+      const data = await res.json();
+      if (data.testing_mode) {
+        statusDot.className = 'status-dot';
+        statusText.textContent = 'Local Testing Engine';
+        footerMode.textContent = 'Local Extractive Synthesis (Testing)';
+      } else {
+        statusDot.className = 'status-dot active';
+        statusText.textContent = `Claude AI Connected`;
+        footerMode.textContent = `Anthropic API: ${data.model}`;
+      }
+    } catch (err) {
+      statusText.textContent = 'Offline / Local';
+    }
+  }
+  syncConfiguration();
+
+  // Instant verification sample
+  sampleBtn.addEventListener('click', async () => {
+    try {
+      sampleBtn.textContent = "Loading sample...";
+      const resp = await fetch('/sample_lecture_os.pdf');
+      const blob = await resp.blob();
+      const file = new File([blob], "lecture_operating_systems.pdf", { type: "application/pdf" });
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      fileInput.files = dt.files;
+      const mb = (file.size / (1024 * 1024)).toFixed(2);
+      fileMeta.textContent = `Attached: ${file.name} [${mb} MB]`;
+      fileMeta.style.display = 'block';
+      sampleBtn.textContent = "Sample Attached";
+      setTimeout(() => {
+        sampleBtn.textContent = "Load verification sample (CS 301 Architecture)";
+      }, 3000);
+    } catch (e) {
+      alert("Failed to load sample: " + e.message);
+      sampleBtn.textContent = "Load verification sample (CS 301 Architecture)";
+    }
+  });
+
+  const pipelineStages = [
+    "Reading file payload and verifying format...",
+    "Extracting document text and layout boundaries...",
+    "Executing parallel chunk analysis across worker threads...",
+    "Extracting core terminology and invariant definitions...",
+    "Synthesizing examination inquiries and finalizing document..."
   ];
 
-  form.addEventListener('submit', async (e) => {
+  // Submission
+  uploadForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    errorBox.style.display = 'none';
-    resultsCard.style.display = 'none';
+    errorBanner.style.display = 'none';
+    resultsPanel.style.display = 'none';
 
     if (!fileInput.files.length) {
-      errorBox.textContent = "Please select a file to upload.";
-      errorBox.style.display = 'block';
+      errorBanner.textContent = "Please specify a document file to synthesize.";
+      errorBanner.style.display = 'block';
       return;
     }
 
-    loadingBox.style.display = 'block';
+    processPanel.style.display = 'block';
     submitBtn.disabled = true;
 
-    let stepIdx = 0;
-    loadingStep.textContent = steps[stepIdx];
-    const stepInterval = setInterval(() => {
-      if (stepIdx < steps.length - 1) {
-        stepIdx++;
-        loadingStep.textContent = steps[stepIdx];
+    let stage = 0;
+    processStep.textContent = pipelineStages[stage];
+    const stageTimer = setInterval(() => {
+      if (stage < pipelineStages.length - 1) {
+        stage++;
+        processStep.textContent = pipelineStages[stage];
       }
-    }, 2800);
+    }, 2400);
 
-    const formData = new FormData(form);
-    currentSubject = document.getElementById('subjectSelect').value.replace(/\s+/g, '_');
+    const formData = new FormData(uploadForm);
+    activeSubjectSlug = document.getElementById('subjectSelect').value.replace(/[^a-zA-Z0-9]/g, '_');
 
     try {
       const response = await fetch('/generate', {
@@ -484,119 +660,68 @@
         body: formData
       });
 
-      clearInterval(stepInterval);
-      loadingBox.style.display = 'none';
+      clearInterval(stageTimer);
+      processPanel.style.display = 'none';
       submitBtn.disabled = false;
 
       const data = await response.json();
 
       if (!response.ok || data.error) {
-        throw new Error(data.error || ("Server error: HTTP " + response.status));
+        throw new Error(data.error || ("HTTP failure: " + response.status));
       }
 
-      currentNoteId = data.id;
-      currentNoteContent = data.notes;
+      activeNoteId = data.id;
+      activeNotesContent = data.notes;
 
-      // Render Markdown
       if (window.marked) {
-        notesContent.innerHTML = marked.parse(data.notes);
+        notesDocument.innerHTML = marked.parse(data.notes);
       } else {
-        notesContent.textContent = data.notes;
+        notesDocument.textContent = data.notes;
       }
 
-      resultMeta.textContent = `Subject: ${data.subject} | Level: ${data.level}`;
-      resultsCard.style.display = 'block';
-      resultsCard.scrollIntoView({ behavior: 'smooth' });
+      resultsMeta.textContent = `Discipline: ${data.subject} | Level: ${data.level} | Identifier: ${data.id}`;
+      resultsPanel.style.display = 'block';
+      resultsPanel.scrollIntoView({ behavior: 'smooth' });
 
     } catch (err) {
-      clearInterval(stepInterval);
-      loadingBox.style.display = 'none';
+      clearInterval(stageTimer);
+      processPanel.style.display = 'none';
       submitBtn.disabled = false;
-      errorBox.textContent = err.message || "An unknown error occurred during generation.";
-      errorBox.style.display = 'block';
+      errorBanner.textContent = err.message || "Synthesis process failed.";
+      errorBanner.style.display = 'block';
     }
   });
 
   // Export handlers
   document.getElementById('exportPdfBtn').addEventListener('click', () => {
-    if (currentNoteId) {
-      window.location.href = `/download?id=${encodeURIComponent(currentNoteId)}&format=pdf&title=${encodeURIComponent(currentSubject + '_Notes')}`;
+    if (activeNoteId) {
+      window.location.href = `/download?id=${encodeURIComponent(activeNoteId)}&format=pdf&title=${encodeURIComponent(activeSubjectSlug + '_Synopsis')}`;
     }
   });
 
   document.getElementById('exportDocxBtn').addEventListener('click', () => {
-    if (currentNoteId) {
-      window.location.href = `/download?id=${encodeURIComponent(currentNoteId)}&format=docx&title=${encodeURIComponent(currentSubject + '_Notes')}`;
+    if (activeNoteId) {
+      window.location.href = `/download?id=${encodeURIComponent(activeNoteId)}&format=docx&title=${encodeURIComponent(activeSubjectSlug + '_Synopsis')}`;
     }
   });
 
   document.getElementById('exportMdBtn').addEventListener('click', () => {
-    if (currentNoteId) {
-      window.location.href = `/download?id=${encodeURIComponent(currentNoteId)}&format=md&title=${encodeURIComponent(currentSubject + '_Notes')}`;
+    if (activeNoteId) {
+      window.location.href = `/download?id=${encodeURIComponent(activeNoteId)}&format=md&title=${encodeURIComponent(activeSubjectSlug + '_Synopsis')}`;
     }
   });
 
   copyBtn.addEventListener('click', async () => {
-    if (!currentNoteContent) return;
+    if (!activeNotesContent) return;
     try {
-      await navigator.clipboard.writeText(currentNoteContent);
-      const prevText = copyBtn.textContent;
-      copyBtn.textContent = "✓ Copied!";
-      setTimeout(() => { copyBtn.textContent = prevText; }, 2000);
+      await navigator.clipboard.writeText(activeNotesContent);
+      const original = copyBtn.textContent;
+      copyBtn.textContent = "Copied";
+      setTimeout(() => { copyBtn.textContent = original; }, 2000);
     } catch (e) {
-      alert("Copied notes to clipboard!");
+      alert("Note text copied to clipboard.");
     }
   });
-
-  // Config check for Testing Mode vs Live Claude
-  async function checkConfig() {
-    try {
-      const res = await fetch('/config');
-      const data = await res.json();
-      const badge = document.getElementById('modeBadge');
-      if (data.testing_mode) {
-        badge.textContent = '🧪 Testing Mode Active (No API Key Needed)';
-        badge.style.background = 'rgba(234, 179, 8, 0.15)';
-        badge.style.color = '#facc15';
-        badge.style.borderColor = 'rgba(234, 179, 8, 0.3)';
-        badge.title = 'Running in offline testing mode via .env (MOCK_LLM=1). Set ANTHROPIC_API_KEY in .env to connect to Claude.';
-      } else {
-        badge.textContent = `⚡ Claude AI Connected (${data.model})`;
-        badge.style.background = 'rgba(16, 185, 129, 0.15)';
-        badge.style.color = '#34d399';
-        badge.style.borderColor = 'rgba(16, 185, 129, 0.3)';
-        badge.title = 'Connected to Anthropic API using key from .env.';
-      }
-    } catch (e) {
-      console.warn("Could not retrieve /config:", e);
-    }
-  }
-  checkConfig();
-
-  // Instant Sample Lecture Loader
-  const sampleBtn = document.getElementById('sampleBtn');
-  if (sampleBtn) {
-    sampleBtn.addEventListener('click', async () => {
-      try {
-        sampleBtn.textContent = "⏳ Loading sample...";
-        const resp = await fetch('/sample_lecture_os.pdf');
-        const blob = await resp.blob();
-        const file = new File([blob], "sample_lecture_os.pdf", { type: "application/pdf" });
-        const dt = new DataTransfer();
-        dt.items.add(file);
-        fileInput.files = dt.files;
-        fileInfo.textContent = `Selected: sample_lecture_os.pdf (${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
-        fileInfo.style.display = 'block';
-        sampleBtn.textContent = "✓ Sample Lecture Loaded";
-        setTimeout(() => {
-          sampleBtn.textContent = "⚡ Or Click to Load Sample CS Lecture (Instant Demo)";
-        }, 3000);
-      } catch (err) {
-        alert("Failed to load sample: " + err.message);
-        sampleBtn.textContent = "⚡ Or Click to Load Sample CS Lecture (Instant Demo)";
-      }
-    });
-  }
 </script>
 
 </body>

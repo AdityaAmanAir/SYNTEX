@@ -118,7 +118,7 @@ static std::string generateIntelligentTestNotes(const std::string& prompt) {
 
     // Build structured exam revision notes
     std::stringstream out;
-    out << "> 💡 **Notice**: Generated in **Testing Mode** (No Anthropic API key required). Set `ANTHROPIC_API_KEY` in `.env` for production Claude AI generation.\n\n";
+    out << "> **System Notice**: Synthesized in Local Testing Mode (Extractive Model). Set ANTHROPIC_API_KEY in .env to engage Claude.\n\n";
 
     out << "## 1. Core Principles & Foundational Architecture\n\n";
     out << "* **Discipline Context**: Exam review notes for **" << subject << "** (Academic Level: **" << level << "**).\n";
