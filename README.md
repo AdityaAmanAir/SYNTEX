@@ -12,9 +12,7 @@ The application is deployed and live for testing! You can use it right in your w
 - **Primary URL**: **[http://adityaman.website](http://adityaman.website)**
 - **Direct IP URL**: **[http://15.252.157.8](http://15.252.157.8)** (or **[http://15.252.157.8:8080](http://15.252.157.8:8080)**)
 
-> [!WARNING]
-> **Use `http://` only (Not `https://`)**  
-> SSL certificates are not active on this port for the hackathon deployment. Please make sure your browser opens **`http://`** (some modern browsers auto-upgrade to https — if you see a connection error, verify the URL starts with `http://`).
+
 
 ---
 
