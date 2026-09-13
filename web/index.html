@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Student Workspace — Lecture to Revision Notes</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --success: #10b981;
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 32px 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 32px;
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      background: linear-gradient(to right, #ffffff, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+      margin-bottom: 24px;
+    }
+
+    .dropzone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 36px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: rgba(15, 23, 42, 0.5);
+      position: relative;
+    }
+
+    .dropzone.dragover, .dropzone:hover {
+      border-color: var(--accent);
+      background: rgba(56, 189, 248, 0.05);
+    }
+
+    .dropzone input[type="file"] {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .drop-icon {
+      font-size: 2.5rem;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .file-info {
+      margin-top: 12px;
+      font-size: 0.95rem;
+      color: var(--accent);
+      font-weight: 600;
+      display: none;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    select, button {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: all 0.2s;
+    }
+
+    select {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      color: var(--text);
+      outline: none;
+    }
+
+    select:focus {
+      border-color: var(--accent);
+    }
+
+    .btn-primary {
+      margin-top: 24px;
+      background: var(--primary);
+      border: none;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.4);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Progress & Loading */
+    .loading-box {
+      display: none;
+      text-align: center;
+      padding: 30px;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 44px;
+      height: 44px;
+      border: 4px solid rgba(56, 189, 248, 0.2);
+      border-radius: 50%;
+      border-top-color: var(--accent);
+      animation: spin 0.9s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-step {
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    /* Results section */
+    .results-card {
+      display: none;
+    }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+
+    .export-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn-export {
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      background: #334155;
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      width: auto;
+    }
+
+    .btn-export:hover {
+      background: #475569;
+      color: white;
+    }
+
+    .btn-export.pdf { background: #dc2626; }
+    .btn-export.pdf:hover { background: #b91c1c; }
+    .btn-export.docx { background: #2563eb; }
+    .btn-export.docx:hover { background: #1d4ed8; }
+
+    /* Markdown note content styling */
+    .notes-rendered {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px;
+      color: #e2e8f0;
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+
+    .notes-rendered h2 {
+      color: #38bdf8;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      font-size: 1.4rem;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 6px;
+    }
+
+    .notes-rendered h2:first-child { margin-top: 0; }
+
+    .notes-rendered ul, .notes-rendered ol {
+      margin-left: 24px;
+      margin-bottom: 16px;
+    }
+
+    .notes-rendered li {
+      margin-bottom: 6px;
+    }
+
+    .notes-rendered strong {
+      color: #f1f5f9;
+    }
+
+    .error-box {
+      display: none;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid #ef4444;
+      border-radius: 8px;
+      padding: 16px;
+      color: #fca5a5;
+      margin-top: 16px;
+      font-size: 0.95rem;
+    }
+
+    footer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="badge">C++17 Engine + Claude AI</div>
+    <h1>AI-Powered Student Workspace</h1>
+    <p class="subtitle">Transform messy lecture slides & documents into clean, exam-ready revision notes</p>
+  </header>
+
+  <div class="card">
+    <form id="uploadForm">
+      <div class="dropzone" id="dropzone">
+        <span class="drop-icon">📄</span>
+        <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 4px;">
+          Drop your lecture file here, or <span style="color: var(--accent);">browse</span>
+        </div>
+        <div style="color: var(--text-muted); font-size: 0.85rem;">
+          Supported formats: PDF, DOCX, PPTX, TXT, MD (up to 25MB)
+        </div>
+        <div class="file-info" id="fileInfo"></div>
+        <input type="file" id="fileInput" name="lecture" accept=".pdf,.docx,.pptx,.ppt,.doc,.txt,.md" required>
+      </div>
+
+      <div class="form-grid">
+        <div>
+          <label for="subjectSelect">Subject Field</label>
+          <select name="subject" id="subjectSelect">
+            <option value="Computer Science" selected>Computer Science & Engineering</option>
+            <option value="Mathematics">Mathematics & Statistics</option>
+            <option value="Biology">Biology & Life Sciences</option>
+            <option value="Economics">Economics & Business</option>
+            <option value="Physics">Physics & Physical Sciences</option>
+            <option value="Chemistry">Chemistry & Materials</option>
+            <option value="History">History & Humanities</option>
+            <option value="Medicine">Medicine & Health Sciences</option>
+            <option value="General">General / Other</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="levelSelect">Academic Level</label>
+          <select name="level" id="levelSelect">
+            <option value="Introductory">Introductory (Foundational)</option>
+            <option value="Undergraduate" selected>Undergraduate (Core Course)</option>
+            <option value="Advanced">Advanced (Graduate Level)</option>
+            <option value="Exam Prep">High-Yield Exam Prep (Cram Mode)</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-primary" id="submitBtn">
+        <span>⚡ Generate Revision Notes</span>
+      </button>
+    </form>
+
+    <div class="error-box" id="errorBox"></div>
+  </div>
+
+  <div class="card loading-box" id="loadingBox">
+    <div class="spinner"></div>
+    <div class="loading-step" id="loadingStep">Processing document...</div>
+    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 8px;">
+      Extracting text, chunking long sections, and generating exam-focused notes with Claude
+    </p>
+  </div>
+
+  <div class="card results-card" id="resultsCard">
+    <div class="results-header">
+      <div>
+        <h3 style="font-size: 1.25rem;" id="resultTitle">Generated Revision Notes</h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem;" id="resultMeta"></p>
+      </div>
+      <div class="export-group">
+        <button class="btn-export pdf" id="exportPdfBtn">📄 Download PDF</button>
+        <button class="btn-export docx" id="exportDocxBtn">📝 Download Word</button>
+        <button class="btn-export" id="exportMdBtn">📋 Download MD</button>
+        <button class="btn-export" id="copyBtn">📋 Copy Notes</button>
+      </div>
+    </div>
+
+    <div class="notes-rendered" id="notesContent"></div>
+  </div>
+
+  <footer>
+    Built with C++17, cpp-httplib, libcurl, poppler-utils, pandoc, and Anthropic API.
+  </footer>
+</div>
+
+<script>
+  let currentNoteId = null;
+  let currentNoteContent = "";
+  let currentSubject = "Revision_Notes";
+
+  const fileInput = document.getElementById('fileInput');
+  const fileInfo = document.getElementById('fileInfo');
+  const dropzone = document.getElementById('dropzone');
+  const form = document.getElementById('uploadForm');
+  const submitBtn = document.getElementById('submitBtn');
+  const loadingBox = document.getElementById('loadingBox');
+  const loadingStep = document.getElementById('loadingStep');
+  const errorBox = document.getElementById('errorBox');
+  const resultsCard = document.getElementById('resultsCard');
+  const notesContent = document.getElementById('notesContent');
+  const resultMeta = document.getElementById('resultMeta');
+  const copyBtn = document.getElementById('copyBtn');
+
+  fileInput.addEventListener('change', (e) => {
+    if (fileInput.files.length > 0) {
+      const file = fileInput.files[0];
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+      fileInfo.textContent = `Selected: ${file.name} (${sizeMb} MB)`;
+      fileInfo.style.display = 'block';
+    } else {
+      fileInfo.style.display = 'none';
+    }
+  });
+
+  // Drag & drop visual cues
+  ['dragenter', 'dragover'].forEach(name => {
+    dropzone.addEventListener(name, (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+  });
+  ['dragleave', 'drop'].forEach(name => {
+    dropzone.addEventListener(name, (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+    });
+  });
+
+  const steps = [
+    "Uploading lecture file...",
+    "Extracting document text & layout...",
+    "Chunking and analyzing core concepts...",
+    "Querying Claude AI for revision notes...",
+    "Synthesizing key definitions and exam questions..."
+  ];
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorBox.style.display = 'none';
+    resultsCard.style.display = 'none';
+
+    if (!fileInput.files.length) {
+      errorBox.textContent = "Please select a file to upload.";
+      errorBox.style.display = 'block';
+      return;
+    }
+
+    loadingBox.style.display = 'block';
+    submitBtn.disabled = true;
+
+    let stepIdx = 0;
+    loadingStep.textContent = steps[stepIdx];
+    const stepInterval = setInterval(() => {
+      if (stepIdx < steps.length - 1) {
+        stepIdx++;
+        loadingStep.textContent = steps[stepIdx];
+      }
+    }, 2800);
+
+    const formData = new FormData(form);
+    currentSubject = document.getElementById('subjectSelect').value.replace(/\s+/g, '_');
+
+    try {
+      const response = await fetch('/generate', {
+        method: 'POST',
+        body: formData
+      });
+
+      clearInterval(stepInterval);
+      loadingBox.style.display = 'none';
+      submitBtn.disabled = false;
+
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        throw new Error(data.error || ("Server error: HTTP " + response.status));
+      }
+
+      currentNoteId = data.id;
+      currentNoteContent = data.notes;
+
+      // Render Markdown
+      if (window.marked) {
+        notesContent.innerHTML = marked.parse(data.notes);
+      } else {
+        notesContent.textContent = data.notes;
+      }
+
+      resultMeta.textContent = `Subject: ${data.subject} | Level: ${data.level}`;
+      resultsCard.style.display = 'block';
+      resultsCard.scrollIntoView({ behavior: 'smooth' });
+
+    } catch (err) {
+      clearInterval(stepInterval);
+      loadingBox.style.display = 'none';
+      submitBtn.disabled = false;
+      errorBox.textContent = err.message || "An unknown error occurred during generation.";
+      errorBox.style.display = 'block';
+    }
+  });
+
+  // Export handlers
+  document.getElementById('exportPdfBtn').addEventListener('click', () => {
+    if (currentNoteId) {
+      window.location.href = `/download?id=${encodeURIComponent(currentNoteId)}&format=pdf&title=${encodeURIComponent(currentSubject + '_Notes')}`;
+    }
+  });
+
+  document.getElementById('exportDocxBtn').addEventListener('click', () => {
+    if (currentNoteId) {
+      window.location.href = `/download?id=${encodeURIComponent(currentNoteId)}&format=docx&title=${encodeURIComponent(currentSubject + '_Notes')}`;
+    }
+  });
+
+  document.getElementById('exportMdBtn').addEventListener('click', () => {
+    if (currentNoteId) {
+      window.location.href = `/download?id=${encodeURIComponent(currentNoteId)}&format=md&title=${encodeURIComponent(currentSubject + '_Notes')}`;
+    }
+  });
+
+  copyBtn.addEventListener('click', async () => {
+    if (!currentNoteContent) return;
+    try {
+      await navigator.clipboard.writeText(currentNoteContent);
+      const prevText = copyBtn.textContent;
+      copyBtn.textContent = "✓ Copied!";
+      setTimeout(() => { copyBtn.textContent = prevText; }, 2000);
+    } catch (e) {
+      alert("Copied notes to clipboard!");
+    }
+  });
+</script>
+
+</body>
+</html>

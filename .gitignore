@@ -1,0 +1,17 @@
+# Build artifacts
+build/
+bin/
+*.o
+*.a
+*.so
+
+# Temporary & editor files
+*.swp
+*~
+.DS_Store
+.vscode/
+.idea/
+
+# Upload and export caches
+/tmp/
+*.tmp
